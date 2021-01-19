@@ -23,7 +23,7 @@ public class CheckLabConfig {
 	public static void checkVariableNotNull(String value, String name) {
 		if (value == null) {
 			System.out.println("ERROR! Environment variable " + name + " is not set.");
-			System.out.println("If you've already set it using the lab 2 setup directions, " +
+			System.out.println("If you've already set it using the lab 1 setup directions, " +
 				               "then try restarting your terminal or IntelliJ.");
 			System.exit(1);
 		}
@@ -72,7 +72,7 @@ public class CheckLabConfig {
 
 	public static void main(String[] args) {
 		System.out.println("Testing configuration. This program only works for the " +
-			               "Fall 2020 edition of this course.");
+			               "Spring 2021 edition of this course.");
 
 		String yourOS = System.getProperty("os.name").toLowerCase();
 		String yourOSVersion = System.getProperty("os.version");
@@ -92,7 +92,7 @@ public class CheckLabConfig {
 		} // for future reference in case we need to test configurations separately
 		     for Mac OS, Catalina, Linux, etc*/
 
-		System.out.println("Your system appears to be configured correctly. You've completed lab 2 setup.");
+		System.out.println("Your system appears to be configured correctly. You've completed lab 1 setup.");
 	}
 }
 
