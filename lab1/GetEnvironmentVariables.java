@@ -15,7 +15,7 @@ public class GetEnvironmentVariables {
 
         String catalina = "echo 'export {variable}={value}' >> ~/.zprofile";
         String mac = "echo 'export {variable}={value}' >> ~/.bash_profile";
-        String linux = "echo 'export {REPO_DIR}={value}' >> ~/.bashrc";
+        String linux = "echo 'export {variable}={value}' >> ~/.bashrc";
         String catalinaSource = "source ~/.zprofile";
         String macSource = "source ~/.bash_profile";
         String linuxSource = "source ~/.bashrc";
