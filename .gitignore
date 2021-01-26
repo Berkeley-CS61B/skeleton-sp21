@@ -3,6 +3,7 @@
 !**.java
 !**.txt
 !**.json
+!**/pom.xml
 !.fatweleminus
 !.gitignore
 !library-fa20
