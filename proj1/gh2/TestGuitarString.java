@@ -77,7 +77,7 @@ public class TestGuitarString  {
         // Check that new sample is correct, using tolerance of 0.001.
         // See JUnit documentation for a description of how tolerances work
         // for assertEquals(double, double)
-        assertEquals("Wrong tic value. Try running the testTic method in TestGuitarString.java.", expected, s5, 0.001);
+        assertEquals("Wrong tic value. Try running the testTic method.", expected, s5, 0.001);
     }
 }
 
