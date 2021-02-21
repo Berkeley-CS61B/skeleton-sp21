@@ -1,0 +1,4 @@
+# A single use of the `dog` command
+> dog Fido dalmation 3
+Woof! My name is Fido and I am a dalmation! I am 3 years old! Woof!
+<<<

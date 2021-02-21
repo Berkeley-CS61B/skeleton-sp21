@@ -1,0 +1,4 @@
+# A single use of the `story` command
+> story "hello world"
+hello world
+<<<
