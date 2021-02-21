@@ -1,0 +1,15 @@
+# Uses the `dog` command twice and also the `birthday` command twice
+> dog Sparky labrador 2
+Woof! My name is Sparky and I am a labrador! I am 2 years old! Woof!             
+<<<
+> dog Dash labradoodle 1
+Woof! My name is Dash and I am a labradoodle! I am 1 years old! Woof!
+<<<
+> birthday Dash
+Woof! My name is Dash and I am a labradoodle! I am 2 years old! Woof!
+Happy birthday! Woof! Woof!
+<<<
+> birthday Sparky
+Woof! My name is Sparky and I am a labrador! I am 3 years old! Woof!             
+Happy birthday! Woof! Woof!
+<<<
