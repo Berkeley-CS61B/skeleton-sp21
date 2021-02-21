@@ -13,24 +13,18 @@ I definitions.inc
 > commit "version 2 of wug.txt"
 <<<
 = wug.txt notwug.txt
-# Each ${HEADER} captures its commit UID.
-D UID "[a-f0-9]+"
-D HEADER "commit (${UID})"
-D DATE "Date: \w\w\w \w\w\w \d+ \d\d:\d\d:\d\d \d\d\d\d [-+]\d\d\d\d"
+# Each ${COMMIT_HEAD} captures its commit UID.
 > log
 ===
-${HEADER}
-${DATE}
+${COMMIT_HEAD}
 version 2 of wug.txt
 
 ===
-${HEADER}
-${DATE}
+${COMMIT_HEAD}
 version 1 of wug.txt
 
 ===
-${HEADER}
-${DATE}
+${COMMIT_HEAD}
 initial commit
 
 <<<*
