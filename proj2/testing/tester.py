@@ -441,9 +441,15 @@ if __name__ == "__main__":
 
     ON_WINDOWS = Match(r'.*\\', join('a', 'b'))
     if ON_WINDOWS:
-        environ['CLASSPATH'] = "{};{}".format(prog_dir, environ['CLASSPATH'])
+        if 'CLASSPATH' in environ:
+            environ['CLASSPATH'] = "{};{}".format(prog_dir, environ['CLASSPATH'])
+        else:
+            environ['CLASSPATH'] = "{}".format(prog_dir)
     else:
-        environ['CLASSPATH'] = "{}:{}".format(prog_dir, environ['CLASSPATH'])
+        if 'CLASSPATH' in environ:
+            environ['CLASSPATH'] = "{}:{}".format(prog_dir, environ['CLASSPATH'])
+        else:
+            environ['CLASSPATH'] = "{}".format(prog_dir)
         JAVA_COMMAND = 'exec ' + JAVA_COMMAND
 
     num_tests = len(files)
