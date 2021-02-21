@@ -458,6 +458,9 @@ if __name__ == "__main__":
         print(DIRECTORY_LAYOUT_ERROR.format("capers"))
         sys.exit(1)
 
+    capers_dir = "\"" + capers_dir + "\"" # in case path has a space in it
+    lib_dir = "\"" + lib_dir + "\"" # in case path has a space in it
+
     lib_glob = join(lib_dir, "*")
     ON_WINDOWS = Match(r'.*\\', join('a', 'b'))
     if ON_WINDOWS:
@@ -465,7 +468,6 @@ if __name__ == "__main__":
             environ['CLASSPATH'] = "{};{};{}".format(abspath(getcwd()), lib_glob, environ['CLASSPATH'])
         else:
             environ['CLASSPATH'] = "{};{}".format(abspath(getcwd()), lib_glob)
-        capers_dir = "\"" + capers_dir + "\"" # in case path has a space in it
     else:
         if ('CLASSPATH' in environ):
             environ['CLASSPATH'] = "{}:{}:{}".format(abspath(getcwd()), lib_glob, environ['CLASSPATH'])
