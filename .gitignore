@@ -367,3 +367,8 @@ tramp
 
 # Project 1B things
 # words
+
+# Capers Lab Things (SP21)
+!Makefile
+!lab6/testing/*
+!lab6/testing/our/*
