@@ -372,3 +372,11 @@ tramp
 !Makefile
 !lab6/testing/*
 !lab6/testing/our/*
+
+# Project 3 Image/Audio/Video Files
+!proj3/**/*.png
+!proj3/**/*.jpeg
+!proj3/**/*.jpg
+!proj3/**/*.mp3
+!proj3/**/*.mp4
+!proj3/**/*.gif
