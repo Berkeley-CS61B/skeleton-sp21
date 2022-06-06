@@ -169,6 +169,37 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                Tile currentTile = b.tile(i, j);
+                if (currentTile == null) {
+                    return true;
+                }
+
+                if (hasEqualNeighbor(currentTile, b)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasEqualNeighbor(Tile t, Board b) {
+        int val = t.value();
+        int col = t.col();
+        int row = t.row();
+        if (row < b.size() - 1) {
+            Tile down = b.tile(col, row + 1);
+            if (down != null && down.value() == val) {
+                return true;
+            }
+        }
+        if (col < b.size() - 1) {
+            Tile right = b.tile(col + 1, row);
+            if (right != null && right.value() == val) {
+                return true;
+            }
+        }
         return false;
     }
 
