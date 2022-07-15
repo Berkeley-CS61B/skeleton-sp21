@@ -114,14 +114,7 @@ public class Model extends Observable {
     	}
     	return -1; //if no null
     }
-    public int firstRowFull(int c) {
-    	for(int r=3;r>=0;r--) {
-    		if(board.tile(c, r)!=null) {
-    			return r;
-    		}
-    	}
-    	return -1; //if no null
-    }
+  
     
        public boolean checkCol(int c) {
     	int x;
