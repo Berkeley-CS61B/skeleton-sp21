@@ -34,7 +34,7 @@ public class Board implements Iterable<Tile> {
         viewPerspective = Side.NORTH;
         for (int col = 0; col < size; col += 1) {
             for (int row = 0; row < size; row += 1) {
-                int value = rawValues[size - 1 - row][col];
+                int value = rawValues[size - 1 - row][col]; // 坐标从左下开始计算，需要上下翻转rawValue
                 Tile tile;
                 if (value == 0) {
                     tile = null;
