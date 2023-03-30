@@ -110,11 +110,9 @@ public class Model extends Observable {
         boolean changed;
         changed = false;
 
-        // TODO: Modify this.board (and perhaps this.score) to account
+        checkGameOver();
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
-        checkGameOver();
-
         for ( int c = 0; c < board.size(); c++) {
             changed |= tileColumn(c, side);
         }
