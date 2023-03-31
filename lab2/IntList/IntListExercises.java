@@ -8,16 +8,23 @@ public class IntListExercises {
      *
      * @param lst IntList from Lecture
      */
+//    public static void addConstant(IntList lst, int c) {
+//        IntList head = lst;
+//
+//        while (head.rest != null) {
+//            head.first += c;
+//            head = head.rest;
+//        }
+//        head.first += c;
+//    }
     public static void addConstant(IntList lst, int c) {
         IntList head = lst;
+        head.first += c;
         while (head.rest != null) {
-            head.first += c;
+            head.rest.first += c;
             head = head.rest;
         }
-        head.first += c;
-        head = head.rest;
     }
-
     /**
      * Part B: Buggy method that sets node.first to zero if
      * the max value in the list starting at node has the same
