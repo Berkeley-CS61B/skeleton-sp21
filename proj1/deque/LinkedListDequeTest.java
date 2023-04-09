@@ -1,3 +1,4 @@
+package deque;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -142,11 +143,9 @@ public class LinkedListDequeTest {
         for (double i = 0; i < 10; i++) {
             d2.addLast(i);
         }
-//        d1.printDeque();
         for (int i = 0; i < 10; i++) {
             assertEquals(i, (int)d1.get(i));
         }
         assertFalse(d1.equals(d2));
-
     }
 }
