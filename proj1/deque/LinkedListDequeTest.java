@@ -1,5 +1,3 @@
-package deque;
-
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -85,8 +83,8 @@ public class LinkedListDequeTest {
     public void multipleParamTest() {
 
 
-        LinkedListDeque<String>  lld1 = new LinkedListDeque<String>();
-        LinkedListDeque<Double>  lld2 = new LinkedListDeque<Double>();
+        LinkedListDeque<String> lld1 = new LinkedListDeque<String>();
+        LinkedListDeque<Double> lld2 = new LinkedListDeque<Double>();
         LinkedListDeque<Boolean> lld3 = new LinkedListDeque<Boolean>();
 
         lld1.addFirst("string");
@@ -133,7 +131,22 @@ public class LinkedListDequeTest {
         for (double i = 999999; i > 500000; i--) {
             assertEquals("Should have the same value", i, (double) lld1.removeLast(), 0.0);
         }
-
+    }
+    @Test
+    public void testIterator() {
+        LinkedListDeque<Integer> d1 = new LinkedListDeque<Integer>();
+        for (int i = 0; i < 10; i++) {
+            d1.addLast(i);
+        }
+        LinkedListDeque<Double> d2 = new LinkedListDeque<Double>();
+        for (double i = 0; i < 10; i++) {
+            d2.addLast(i);
+        }
+//        d1.printDeque();
+        for (int i = 0; i < 10; i++) {
+            assertEquals(i, (int)d1.get(i));
+        }
+        assertFalse(d1.equals(d2));
 
     }
 }

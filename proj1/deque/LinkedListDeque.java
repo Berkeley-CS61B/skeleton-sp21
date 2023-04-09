@@ -1,6 +1,3 @@
-package deque;
-
-
 import java.util.Iterator;
 
 /** The class for Deque.
@@ -8,7 +5,7 @@ import java.util.Iterator;
  */
 public class LinkedListDeque<T> implements Iterable<T> {
     private int size;
-    private Node sentinel;
+    Node sentinel;
     public class Node {
         public T item;
         public Node next; // 引用类型
@@ -22,6 +19,33 @@ public class LinkedListDeque<T> implements Iterable<T> {
             item = null;
             next = null;
             prev = null;
+        }
+    }
+
+    // Deque的迭代器
+    class DequeIterator<T> implements Iterator<T> {
+        LinkedListDeque<T>.Node current;
+        LinkedListDeque<T>.Node _sentinel; // 哨兵节点
+
+        // initialize pointer to head of the list for iteration
+        public DequeIterator(LinkedListDeque<T> list)
+        {
+            current = list.sentinel;
+            _sentinel = list.sentinel;
+        }
+
+        // returns false if next element does not exist
+        public boolean hasNext()
+        {
+            return current.next != _sentinel;
+        }
+
+        // return current data and update pointer
+        public T next()
+        {
+            T data = current.item;
+            current = current.next;
+            return data;
         }
     }
     public  LinkedListDeque() {
@@ -125,19 +149,8 @@ public class LinkedListDeque<T> implements Iterable<T> {
 
     // The Deque objects we’ll make are iterable (i.e. Iterable<T>)
     // so we must provide this method to return an iterator.
-    // TODO: The iterator method need to be finished.
     public Iterator<T> iterator(){
-        return new Iterator<T>() {
-            @Override
-            public boolean hasNext() {
-                return false;
-            }
-
-            @Override
-            public T next() {
-                return null;
-            }
-        };
+        return new DequeIterator<>(this);
     }
 
     // Returns whether or not the parameter o is equal to the Deque.
@@ -145,12 +158,19 @@ public class LinkedListDeque<T> implements Iterable<T> {
     // same contents (as goverened by the generic T’s equals method)
     // in the same order.
 
-    // TODO: The equals method need to be finished.
+
     public boolean equals(Object o){
         if (! (o instanceof LinkedListDeque)){
             return false;
         }
 
+        int j = 0;
+        for(Object i : (LinkedListDeque)o){
+            if(j >= size || (T)i != get(j)){
+                return false;
+            }
+            j++;
+        }
         return true;
     }
 }
