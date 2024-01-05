@@ -44,31 +44,31 @@ public class Main {
 
         try {
             CapersRepository.setupPersistence();
+
+            String text;
+            switch (args[0]) {
+            case "story":
+                /* This call has been handled for you. The rest will be similar. */
+                validateNumArgs("story", args, 2);
+                text = args[1];
+                CapersRepository.writeStory(text);
+                break;
+            case "dog":
+                validateNumArgs("dog", args, 4);
+                // TODO: make a dog
+                break;
+            case "birthday":
+                validateNumArgs("birthday", args, 2);
+                // TODO: celebrate this dog's birthday
+                break;
+            default:
+                exitWithError(String.format("Unknown command: %s", args[0]));
+            }
+
         } catch (IOException exception) {
             exception.printStackTrace();
             System.exit(1);
         }
-
-        String text;
-        switch (args[0]) {
-        case "story":
-            /* This call has been handled for you. The rest will be similar. */
-            validateNumArgs("story", args, 2);
-            text = args[1];
-            CapersRepository.writeStory(text);
-            break;
-        case "dog":
-            validateNumArgs("dog", args, 4);
-            // TODO: make a dog
-            break;
-        case "birthday":
-            validateNumArgs("birthday", args, 2);
-            // TODO: celebrate this dog's birthday
-            break;
-        default:
-            exitWithError(String.format("Unknown command: %s", args[0]));
-        }
-        return;
     }
 
     /**
