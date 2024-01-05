@@ -5,12 +5,12 @@ public class Collatz {
 
     /** Buggy implementation of nextNumber! */
     public static int nextNumber(int n) {
-        if (n  == 128) {
-            return 1;
-        } else if (n == 5) {
+        if (n  % 2 == 0) { // n 除 2 沒餘數 = 偶數
+            return n >> 1; // bitwise右移一位
+        } else if (n % 2 == 1) { // 判斷 n 除 2 的餘數有 1 = 奇數
             return 3 * n + 1;
         } else {
-            return n * 2;
+            return 0; // 特殊情況跳過
         }
     }
 
