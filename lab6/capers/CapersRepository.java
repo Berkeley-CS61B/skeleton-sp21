@@ -1,6 +1,8 @@
 package capers;
 
 import java.io.File;
+import java.io.IOException;
+
 import static capers.Utils.*;
 
 /** A repository for Capers 
@@ -18,8 +20,11 @@ public class CapersRepository {
     static final File CWD = new File(System.getProperty("user.dir"));
 
     /** Main metadata folder. */
-    static final File CAPERS_FOLDER = null; // TODO Hint: look at the `join`
-                                            //      function in Utils
+    static final File CAPERS_FOLDER = Utils.join(CWD, ".capers");
+
+    /** Other metadata files */
+    static final File STORY_FILE = Utils.join(CAPERS_FOLDER, "story");
+    static final File DOGS_DIRECTORY = Utils.join(CAPERS_FOLDER, "dogs");
 
     /**
      * Does required filesystem operations to allow for persistence.
@@ -30,8 +35,10 @@ public class CapersRepository {
      *    - dogs/ -- folder containing all of the persistent data for dogs
      *    - story -- file containing the current story
      */
-    public static void setupPersistence() {
-        // TODO
+    public static void setupPersistence() throws IOException {
+        if (!CAPERS_FOLDER.exists()) CAPERS_FOLDER.mkdir();
+        if (!DOGS_DIRECTORY.exists()) DOGS_DIRECTORY.mkdir();
+        if (!STORY_FILE.exists()) STORY_FILE.createNewFile();
     }
 
     /**
@@ -40,7 +47,10 @@ public class CapersRepository {
      * @param text String of the text to be appended to the story
      */
     public static void writeStory(String text) {
-        // TODO
+        String oldStory = Utils.readContentsAsString(STORY_FILE);
+        String newStory = text + '\n' + oldStory;
+        Utils.writeContents(STORY_FILE, newStory);
+        System.out.println(newStory);
     }
 
     /**

@@ -1,6 +1,7 @@
 package capers;
 
 import java.io.File;
+import java.io.IOException;
 
 import static capers.Utils.*;
 
@@ -41,7 +42,13 @@ public class Main {
             Utils.exitWithError("Must have at least one argument");
         }
 
-        CapersRepository.setupPersistence();
+        try {
+            CapersRepository.setupPersistence();
+        } catch (IOException exception) {
+            exception.printStackTrace();
+            System.exit(1);
+        }
+
         String text;
         switch (args[0]) {
         case "story":
