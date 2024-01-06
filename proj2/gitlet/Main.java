@@ -1,7 +1,7 @@
 package gitlet;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
- *  @author TODO
+ *  @author xUser5000
  */
 public class Main {
 
@@ -10,8 +10,7 @@ public class Main {
      */
     public static void main(String[] args) {
         if (args.length == 0) {
-            System.out.println("Please enter a command.");
-            System.exit(0);
+            Utils.exitWithMessage("Please enter a command.");
         }
 
         String command = args[0];
@@ -30,8 +29,7 @@ public class Main {
 
     public static void validateNumArgs(String[] args, int n) {
         if (args.length != n) {
-            System.out.println("Incorrect operands.");
-            System.exit(0);
+            Utils.exitWithMessage("Incorrect operands.");
         }
     }
 }
