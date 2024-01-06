@@ -44,7 +44,7 @@ public class Repository {
         REMOVAL_DIR.mkdir();
         HEAD_FILE.createNewFile();
 
-        Commit initialCommit = new Commit("initial commit", new ArrayList<>(), null, null, new Date(0));
+        Commit initialCommit = new Commit("initial commit", new Date(0), null, null, null);
         initialCommit.saveCommit(COMMITS_DIR);
 
         Branch masterBranch = new Branch("master", initialCommit.getHash());

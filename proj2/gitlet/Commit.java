@@ -2,9 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import static gitlet.Utils.*;
 
@@ -14,55 +12,32 @@ import static gitlet.Utils.*;
  *  @author xUser5000
  */
 public class Commit implements Serializable, Dumpable {
-    private Date timestamp;
-    private String message;
+    private final String message;
+    private final Date timestamp;
+    /** Original parent from the  */
+    private final String parent;
+    private final String secondaryParent;
 
-    private String parent;
-    private String secondaryParent;
-    private List<String> trackedFiles;
-    private String hash;
+    private final Map<String, String> trackedFiles;
+    private final String hash;
 
-    public Commit(String message, List<String> trackedFiles) {
+    public Commit(String message, Date timestamp, Map<String, String> trackedFiles, String parent, String secondaryParent) {
         this.message = message;
-        this.trackedFiles = trackedFiles;
-        this.timestamp = new Date();
-        this.hash = generateHash();
-    }
-
-    public Commit(String message, List<String> trackedFiles, String leftParent) {
-        this.message = message;
-        this.parent = leftParent;
-        this.trackedFiles = trackedFiles;
-        this.timestamp = new Date();
-        this.hash = generateHash();
-    }
-
-    public Commit(String message, List<String> trackedFiles, String parent, String secondaryParent) {
-        this.message = message;
+        this.timestamp = (timestamp != null) ? timestamp : new Date();
         this.parent = parent;
         this.secondaryParent = secondaryParent;
-        this.trackedFiles = trackedFiles;
-        this.timestamp = new Date();
-        this.hash = generateHash();
-    }
-
-    public Commit(String message, List<String> trackedFiles, String parent, String secondaryParent, Date timestamp) {
-        this.message = message;
-        this.parent = parent;
-        this.secondaryParent = secondaryParent;
-        this.trackedFiles = trackedFiles;
-        this.timestamp = timestamp;
+        this.trackedFiles = (trackedFiles != null) ? trackedFiles : new TreeMap<>();
         this.hash = generateHash();
     }
 
     private String generateHash() {
         List<Object> hashItems = new ArrayList<>();
-        hashItems.add(timestamp.toString());
         hashItems.add(message);
+        hashItems.add(timestamp.toString());
         hashItems.add((parent == null) ? "" : parent);
         hashItems.add((secondaryParent == null) ? "" : secondaryParent);
-        for (String file: trackedFiles) {
-            hashItems.add(file);
+        for (Map.Entry<String, String> entry: trackedFiles.entrySet()) {
+            hashItems.add(entry.toString());
         }
         return sha1(hashItems);
     }
@@ -83,7 +58,7 @@ public class Commit implements Serializable, Dumpable {
         return secondaryParent;
     }
 
-    public List<String> getTrackedFiles() {
+    public Map<String, String> getTrackedFiles() {
         return trackedFiles;
     }
 
