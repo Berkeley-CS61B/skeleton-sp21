@@ -1,26 +1,121 @@
 package gitlet;
 
-// TODO: any imports you need here
+import java.io.File;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
-import java.util.Date; // TODO: You'll likely use this in this class
+import static gitlet.Utils.*;
 
 /** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
  *  does at a high level.
  *
- *  @author TODO
+ *  @author xUser5000
  */
-public class Commit {
-    /**
-     * TODO: add instance variables here.
-     *
-     * List all instance variables of the Commit class here with a useful
-     * comment above them describing what that variable represents and how that
-     * variable is used. We've provided one example for `message`.
-     */
-
-    /** The message of this Commit. */
+public class Commit implements Serializable, Dumpable {
+    private Date timestamp;
     private String message;
 
-    /* TODO: fill in the rest of this class. */
+    private String parent;
+    private String secondaryParent;
+    private List<String> trackedFiles;
+    private String hash;
+
+    public Commit(String message, List<String> trackedFiles) {
+        this.message = message;
+        this.trackedFiles = trackedFiles;
+        this.timestamp = new Date();
+        this.hash = generateHash();
+    }
+
+    public Commit(String message, List<String> trackedFiles, String leftParent) {
+        this.message = message;
+        this.parent = leftParent;
+        this.trackedFiles = trackedFiles;
+        this.timestamp = new Date();
+        this.hash = generateHash();
+    }
+
+    public Commit(String message, List<String> trackedFiles, String parent, String secondaryParent) {
+        this.message = message;
+        this.parent = parent;
+        this.secondaryParent = secondaryParent;
+        this.trackedFiles = trackedFiles;
+        this.timestamp = new Date();
+        this.hash = generateHash();
+    }
+
+    public Commit(String message, List<String> trackedFiles, String parent, String secondaryParent, Date timestamp) {
+        this.message = message;
+        this.parent = parent;
+        this.secondaryParent = secondaryParent;
+        this.trackedFiles = trackedFiles;
+        this.timestamp = timestamp;
+        this.hash = generateHash();
+    }
+
+    private String generateHash() {
+        List<Object> hashItems = new ArrayList<>();
+        hashItems.add(timestamp.toString());
+        hashItems.add(message);
+        hashItems.add((parent == null) ? "" : parent);
+        hashItems.add((secondaryParent == null) ? "" : secondaryParent);
+        for (String file: trackedFiles) {
+            hashItems.add(file);
+        }
+        return sha1(hashItems);
+    }
+
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public String getParent() {
+        return parent;
+    }
+
+    public String getSecondaryParent() {
+        return secondaryParent;
+    }
+
+    public List<String> getTrackedFiles() {
+        return trackedFiles;
+    }
+
+    public String getHash() {
+        return hash;
+    }
+
+    public void saveCommit(File commitsDirectory) {
+        File commitFile = join(commitsDirectory, hash);
+        writeObject(commitFile, this);
+    }
+
+    @Override
+    public String toString() {
+        return "Commit{" +
+                "timestamp=" + timestamp +
+                ", message='" + message + '\'' +
+                ", parent='" + parent + '\'' +
+                ", secondaryParent='" + secondaryParent + '\'' +
+                ", trackedFiles=" + trackedFiles +
+                ", hash='" + hash + '\'' +
+                '}';
+    }
+
+    @Override
+    public void dump() {
+        System.out.println(this);
+    }
+
+    public static Commit fromFile(File commitsDirectory, String commitHash) {
+        File commitFile = join(commitsDirectory, commitHash);
+        return readObject(commitFile, Commit.class);
+    }
+
 }
