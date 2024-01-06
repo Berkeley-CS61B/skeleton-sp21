@@ -30,6 +30,7 @@ public class Repository {
      * 1. Initialize the directory structure inside .gitlet
      * 2. Start with a single branch called "master"
      * 3. Start with one commit with the message "initial commit" with a timestamp = Unix epoch
+     * 4. Set HEAD to point to the master branch
      */
     public static void init() throws IOException {
         if (GITLET_DIR.exists()) {
@@ -49,6 +50,8 @@ public class Repository {
 
         Branch masterBranch = new Branch("master", initialCommit.getHash());
         masterBranch.saveBranch(BRANCHES_DIR);
+
+        setCurrentBranch(masterBranch.getName());
     }
 
     /**
@@ -67,5 +70,9 @@ public class Repository {
         }
 
 
+    }
+
+    private static void setCurrentBranch(String branchName) {
+        writeContents(HEAD_FILE, branchName);
     }
 }
