@@ -16,7 +16,8 @@ public class Main {
         String command = args[0];
         switch(command) {
             case "init":
-                // TODO: handle the `init` command
+                validateNumArgs(args, 1);
+                Repository.init();
                 break;
             case "add":
                 // TODO: handle the `add [filename]` command
