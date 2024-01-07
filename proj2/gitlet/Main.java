@@ -47,6 +47,11 @@ public class Main {
                     validateNumArgs(args, 1);
                     Repository.globalLog();
                     break;
+                case "find":
+                    validateNumArgs(args, 2);
+                    message = args[1];
+                    Repository.find(message);
+                    break;
                 default:
                     exitWithMessage("No command with that name exists.");
             }

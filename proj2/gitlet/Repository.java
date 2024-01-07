@@ -106,8 +106,14 @@ public class Repository {
             exitWithMessage("Please enter a commit message.");
         }
 
-        List<File> addedFiles = Objects.requireNonNull(plainFilenamesIn(ADDITION_DIR)).stream().map(File::new).collect(Collectors.toList());
-        List<File> removedFiles = Objects.requireNonNull(plainFilenamesIn(REMOVAL_DIR)).stream().map(File::new).collect(Collectors.toList());
+        List<File> addedFiles = Objects.requireNonNull(plainFilenamesIn(ADDITION_DIR))
+                .stream()
+                .map(fileName -> join(ADDITION_DIR, fileName))
+                .collect(Collectors.toList());
+        List<File> removedFiles = Objects.requireNonNull(plainFilenamesIn(REMOVAL_DIR))
+                .stream()
+                .map(fileName -> join(REMOVAL_DIR, fileName))
+                .collect(Collectors.toList());
         if (addedFiles.isEmpty() && removedFiles.isEmpty()) {
             exitWithMessage("No changes added to the commit.");
         }
@@ -219,6 +225,23 @@ public class Repository {
            Commit commit = Commit.fromFile(COMMITS_DIR, hash);
            System.out.print(commit.log());
        });
+    }
+
+    /**
+     * Prints out the ids of all commits that have the given commit message, one per line
+     * Failure cases: If no such commit exists, prints the error message `Found no commit with that message.`
+     */
+    public static void find(String commitMessage) {
+        List<String> matchedCommitHashes = Objects.requireNonNull(plainFilenamesIn(COMMITS_DIR))
+                .stream()
+                .map(hash -> Commit.fromFile(COMMITS_DIR, hash))
+                .filter(commit -> commit.getMessage().equals(commitMessage))
+                .map(Commit::getHash)
+                .collect(Collectors.toList());
+        if (matchedCommitHashes.isEmpty()) {
+            exitWithMessage("Found no commit with that message.");
+        }
+        matchedCommitHashes.forEach(System.out::println);
     }
 
     private static Commit getCurrentCommit() {
