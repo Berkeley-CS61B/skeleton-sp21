@@ -2,7 +2,6 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
 
 import static gitlet.Utils.*;
@@ -27,10 +26,10 @@ public class Repository {
     public static final File REMOVAL_DIR = join(STAGED_DIR, "removal");
 
     /**
-     * 1. Initialize the directory structure inside .gitlet
-     * 2. Start with a single branch called "master"
-     * 3. Start with one commit with the message "initial commit" with a timestamp = Unix epoch
-     * 4. Set HEAD to point to the master branch
+     * Initialize the directory structure inside .gitlet
+     * Start with a single branch called "master"
+     * Start with one commit with the message "initial commit" with a timestamp = Unix epoch
+     * Set HEAD to point to the master branch
      */
     public static void init() throws IOException {
         if (GITLET_DIR.exists()) {
@@ -55,21 +54,42 @@ public class Repository {
     }
 
     /**
-     * 1. make a copy of the file to .gitlet/STAGED_DIR/ADDITION_DIR/file_name
+     * If the file does not exist, print the error message `File does not exist.` and exit without changing anything.
+     * If the current working version of the file is identical to the version in the current commit,
+     *      do not stage it to be added, and remove it from the staging area if it is already there.
+     * Staging an already-staged file overwrites the previous entry in the staging area with the new contents.
+     * If the file was staged for removal, it will no longer be after executing the command
+     * Make a copy of the file to .gitlet/STAGED_DIR/ADDITION_DIR/file_name
      *      - we are dealing with a flat directory structure
-     * 2. Staging an already-staged file overwrites the previous entry in the staging area with the new contents.
-     * 3. If the current working version of the file is identical to the version in the current commit,
-     *    do not stage it to be added, and remove it from the staging area if it is already there.
-     * 4. The file will no longer be staged for removal, if it was at the time of the command.
-     * 5. If the file does not exist, print the error message File does not exist. and exit without changing anything.
      */
     public static void add(String fileName) {
-        File file = new File(fileName);
-        if (!file.exists()) {
+        File workingFile = new File(fileName);
+        if (!workingFile.exists()) {
             exitWithMessage("File does not exist.");
         }
+        String workingFileContents = readContentsAsString(workingFile);
+        File stagedFile = join(ADDITION_DIR, fileName);
+        Commit currentCommit = getCurrentCommit();
+        String committedFileHash = currentCommit.getTrackedFiles().get(fileName);
+        if (sha1(workingFileContents).equals(committedFileHash)) {
+            if (stagedFile.exists()) stagedFile.delete();
+            return;
+        }
+        writeContents(stagedFile, workingFileContents);
+        File stagedForRemovalFile = new File(REMOVAL_DIR, fileName);
+        if (stagedForRemovalFile.exists()) {
+            stagedForRemovalFile.delete();
+        }
+    }
 
+    private static Commit getCurrentCommit() {
+        String commitHash = getCurrentBranch().getHead();
+        return Commit.fromFile(COMMITS_DIR, commitHash);
+    }
 
+    private static Branch getCurrentBranch() {
+        String branchName = readContentsAsString(HEAD_FILE);
+        return Branch.fromFile(BRANCHES_DIR, branchName);
     }
 
     private static void setCurrentBranch(String branchName) {

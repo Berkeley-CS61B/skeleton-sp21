@@ -24,7 +24,9 @@ public class Main {
                     Repository.init();
                     break;
                 case "add":
-                    // TODO: handle gitlet add <file>
+                    validateNumArgs(args, 2);
+                    String fileName = args[1];
+                    Repository.add(fileName);
                     break;
                 default:
                     exitWithMessage("No command with that name exists.");
