@@ -244,6 +244,71 @@ public class Repository {
         matchedCommitHashes.forEach(System.out::println);
     }
 
+    /**
+     * Displays what branches currently exist, and marks the current branch with a *
+     * Displays what files have been staged for addition or removal
+     * Example:
+     * ```
+     * === Branches ===
+     * *master
+     * other-branch
+     *
+     * === Staged Files ===
+     * wug.txt
+     * wug2.txt
+     *
+     * === Removed Files ===
+     * goodbye.txt
+     *
+     * === Modifications Not Staged For Commit ===
+     * junk.txt (deleted)
+     * wug3.txt (modified)
+     *
+     * === Untracked Files ===
+     * random.stuff
+     * ```
+     * There is an empty line between sections, and the entire status ends in an empty line as well
+     * Entries should be listed in lexicographic order,
+     *      using the Java string-comparison order (the asterisk doesn’t count)
+     * A file in the working directory is “modified but not staged” if it is
+     *      - Tracked in the current commit, changed in the working directory, but not staged; or
+     *      - Staged for addition, but with different contents than in the working directory; or
+     *      - Staged for addition, but deleted in the working directory; or
+     *      - Not staged for removal, but tracked in the current commit and deleted from the working directory.
+     * “Untracked Files” is for files present in the working directory but neither staged for addition nor tracked
+     *      - This includes files that have been staged for removal, but then re-created without Gitlet’s knowledge
+     */
+    public static void status() {
+        System.out.println("=== Branches ===");
+        List<String> branches = plainFilenamesIn(BRANCHES_DIR);
+        Branch currentBranch = getCurrentBranch();
+        branches.forEach(branch -> {
+            if (branch.equals(currentBranch.getName())) {
+                System.out.print("*");
+                System.out.println(branch);
+            }
+        });
+        System.out.println();
+
+        System.out.println("=== Staged Files ===");
+        List<String> addedFiles = plainFilenamesIn(ADDITION_DIR);
+        addedFiles.forEach(System.out::println);
+        System.out.println();
+
+        System.out.println("=== Removed Files ===");
+        List<String> removedFiles = plainFilenamesIn(REMOVAL_DIR);
+        removedFiles.forEach(System.out::println);
+        System.out.println();
+
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        // TODO: Modifications not staged for commit
+        System.out.println();
+
+        System.out.println("=== Untracked Files ===");
+        // TODO: Untracked files
+        System.out.println();
+    }
+
     private static Commit getCurrentCommit() {
         String commitHash = getCurrentBranch().getHead();
         return Commit.fromFile(COMMITS_DIR, commitHash);
