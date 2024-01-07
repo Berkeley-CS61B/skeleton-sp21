@@ -164,6 +164,63 @@ public class Repository {
         }
     }
 
+    /**
+     * Display information about each commit backwards along the commit tree
+     *      starting from the commit in the current HEAD until the initial commit
+     * Following the first parent commit links, ignoring any secondary parents found in merge commits
+     * For every node in this history, the information it should display is:
+     *      the commit id, the time the commit was made, and the commit message
+     * Example:
+     * ```
+     * ===
+     * commit a0da1ea5a15ab613bf9961fd86f010cf74c7ee48
+     * Date: Thu Nov 9 20:00:05 2017 -0800
+     * A commit message.
+     *
+     * ===
+     * commit 3e8bf1d794ca2e9ef8a4007275acf3751c7170ff
+     * Date: Thu Nov 9 17:01:33 2017 -0800
+     * Another commit message.
+     *
+     * ===
+     * commit e881c9575d180a215d1a636545b8fd9abfb1d2bb
+     * Date: Wed Dec 31 16:00:00 1969 -0800
+     * initial commit
+     * ```
+     * There is a === before each commit and an empty line after it
+     * Each entry displays the unique SHA-1 id of the commit object
+     * The timestamps displayed in the commits reflect the current timezone, not UTC
+     * For merge commits (those that have two parent commits), add a line just below the first, as in
+     * ```
+     * commit 3e8bf1d794ca2e9ef8a4007275acf3751c7170ff
+     * Merge: 4975af1 2c1ead1
+     * Date: Sat Nov 11 12:30:00 2017 -0800
+     * Merged development into master.
+     * ```
+     * The two hexadecimal numerals following “Merge:” consist of the first seven digits of the first and second parents’ commit ids
+     * The first parent is the branch you were on when you did the merge; the second is that of the merged-in branch
+     */
+    public static void log() {
+        Commit currentCommit = getCurrentCommit();
+        while (true) {
+            System.out.println("===");
+            System.out.printf("commit %s\n", currentCommit.getHash());
+            if (currentCommit.getParent() != null && currentCommit.getSecondaryParent() != null) {
+                System.out.printf(
+                        "Merge: %s %s\n",
+                        currentCommit.getParent().substring(0, 7),
+                        currentCommit.getSecondaryParent().substring(0, 7)
+                );
+            }
+            Formatter formatter = new Formatter().format("Date: %1$ta %1$tb %1$td %1$tT %1$tY %1$tz", currentCommit.getTimestamp());
+            String formattedDate = formatter.toString();
+            System.out.printf("%s\n", formattedDate);
+            System.out.printf("%s\n\n", currentCommit.getMessage());
+
+            if (currentCommit.getParent() == null) break;
+            currentCommit = Commit.fromFile(COMMITS_DIR, currentCommit.getParent());
+        }
+    }
 
     private static Commit getCurrentCommit() {
         String commitHash = getCurrentBranch().getHead();

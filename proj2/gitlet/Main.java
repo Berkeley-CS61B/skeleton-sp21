@@ -39,6 +39,10 @@ public class Main {
                     fileName = args[1];
                     Repository.rm(fileName);
                     break;
+                case "log":
+                    validateNumArgs(args, 1);
+                    Repository.log();
+                    break;
                 default:
                     exitWithMessage("No command with that name exists.");
             }
