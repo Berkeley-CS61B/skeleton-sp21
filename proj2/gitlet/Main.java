@@ -16,7 +16,8 @@ public class Main {
         }
 
         String command = args[0];
-
+        String fileName;
+        String message;
         try {
             switch (command) {
                 case "init":
@@ -25,8 +26,18 @@ public class Main {
                     break;
                 case "add":
                     validateNumArgs(args, 2);
-                    String fileName = args[1];
+                    fileName = args[1];
                     Repository.add(fileName);
+                    break;
+                case "commit":
+                    validateNumArgs(args, 2);
+                    message = args[1];
+                    Repository.commit(message);
+                    break;
+                case "rm":
+                    validateNumArgs(args, 2);
+                    fileName = args[1];
+                    Repository.rm(fileName);
                     break;
                 default:
                     exitWithMessage("No command with that name exists.");

@@ -139,6 +139,32 @@ public class Repository {
         removedFiles.forEach(File::delete);
     }
 
+    /**
+     * If the file is neither staged nor tracked by the head commit, print the error message `No reason to remove the file.`
+     * If the file is currently staged for addition, unstage it
+     * If the file is tracked in the current commit,
+     *      - stage it for removal
+     *      - remove it from the working directory if the user has not already done so
+     */
+    public static void rm(String filename) {
+        File stagedForAdditionFile = join(ADDITION_DIR, filename);
+        Map<String, String> trackedFiles = getCurrentCommit().getTrackedFiles();
+        if (!stagedForAdditionFile.exists() && !trackedFiles.containsKey(filename)) {
+            exitWithMessage("No reason to remove the file.");
+        }
+        if (stagedForAdditionFile.exists()) {
+            stagedForAdditionFile.delete();
+        }
+        if (trackedFiles.containsKey(filename)) {
+            File trackedFile = join(BLOBS_DIR, trackedFiles.get(filename));
+            File stagedForRemovalFile = join(REMOVAL_DIR, filename);
+            writeContents(stagedForRemovalFile, readContentsAsString(trackedFile));
+            File workingFile = new File(filename);
+            if (workingFile.exists()) workingFile.delete();
+        }
+    }
+
+
     private static Commit getCurrentCommit() {
         String commitHash = getCurrentBranch().getHead();
         return Commit.fromFile(COMMITS_DIR, commitHash);
