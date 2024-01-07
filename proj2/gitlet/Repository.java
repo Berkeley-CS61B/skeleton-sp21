@@ -2,7 +2,8 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static gitlet.Utils.*;
 
@@ -82,6 +83,62 @@ public class Repository {
         }
     }
 
+    /**
+     * If the commit message is empty, print the error message `Please enter a commit message.`
+     * If no files have been staged, print the message `No changes added to the commit.`
+     * For each added/modified files in the staging area,
+     *      - Compute its SHA-1 hash as a function of its contents
+     *      - Copy it to BLOBS_DIR and set its name to its hash value
+     * Build the commit:
+     *      - Set the commit message
+     *      - Set the timestamp to now
+     *      - Reuse all tracked files from the parent commit
+     *      - Rewire the references of the added/modified files
+     *      - Untrack removed files (i.e, files in REMOVAL_DIR)
+     *      - Point to the parent commit
+     * Save the commit on disk in COMMITS_DIR
+     * Update the pointer of the current branch to point to the new commit
+     * Clear the staging area (i.e, remove all files in ADDITION_DIR and REMOVAL_DIR)
+     *
+     */
+    public static void commit(String message) {
+        if (message.isEmpty()) {
+            exitWithMessage("Please enter a commit message.");
+        }
+
+        List<File> addedFiles = Objects.requireNonNull(plainFilenamesIn(ADDITION_DIR)).stream().map(File::new).collect(Collectors.toList());
+        List<File> removedFiles = Objects.requireNonNull(plainFilenamesIn(REMOVAL_DIR)).stream().map(File::new).collect(Collectors.toList());
+        if (addedFiles.isEmpty() && removedFiles.isEmpty()) {
+            exitWithMessage("No changes added to the commit.");
+        }
+
+        /* Compute the SHA-1 hash of added/modified files and store them in the blobs directory */
+        Map<String, String> nameToBlob = new TreeMap<>();
+        addedFiles.forEach(file -> {
+            String hash = storeBlob(file);
+            nameToBlob.put(file.getName(), hash);
+        });
+
+        /* update the tracked list of files */
+        Commit currentCommit = getCurrentCommit();
+        Map<String, String> trackedFiles = currentCommit.getTrackedFiles();
+        trackedFiles.putAll(nameToBlob);
+        removedFiles.forEach(file -> trackedFiles.remove(file.getName()));
+
+        /* Build and save the commit */
+        Commit newCommit = new Commit(message, new Date(), trackedFiles, currentCommit.getHash(), null);
+        newCommit.saveCommit(COMMITS_DIR);
+
+        /* Update the pointer of the current branch to point to the newly-created commit */
+        Branch branch = getCurrentBranch();
+        branch.setHead(newCommit.getHash());
+        branch.saveBranch(BRANCHES_DIR);
+
+        /* Clear the staging area */
+        addedFiles.forEach(File::delete);
+        removedFiles.forEach(File::delete);
+    }
+
     private static Commit getCurrentCommit() {
         String commitHash = getCurrentBranch().getHead();
         return Commit.fromFile(COMMITS_DIR, commitHash);
@@ -94,5 +151,13 @@ public class Repository {
 
     private static void setCurrentBranch(String branchName) {
         writeContents(HEAD_FILE, branchName);
+    }
+
+    private static String storeBlob(File file) {
+        String contents = readContentsAsString(file);
+        String hash = sha1(contents);
+        File storedBlob = join(BLOBS_DIR, hash);
+        writeContents(storedBlob, contents);
+        return hash;
     }
 }

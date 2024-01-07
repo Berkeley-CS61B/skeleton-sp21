@@ -7,8 +7,6 @@ import java.util.*;
 import static gitlet.Utils.*;
 
 /** Represents a gitlet commit object.
- *  does at a high level.
- *
  *  @author xUser5000
  */
 public class Commit implements Serializable, Dumpable {
