@@ -209,6 +209,18 @@ public class Repository {
         }
     }
 
+    /**
+     * Like log, except displays information about all commits ever made.
+     * The order of the commits does not matter
+     */
+    public static void globalLog() {
+       List<String> commitHashes = plainFilenamesIn(COMMITS_DIR);
+       commitHashes.forEach(hash -> {
+           Commit commit = Commit.fromFile(COMMITS_DIR, hash);
+           System.out.print(commit.log());
+       });
+    }
+
     private static Commit getCurrentCommit() {
         String commitHash = getCurrentBranch().getHead();
         return Commit.fromFile(COMMITS_DIR, commitHash);
