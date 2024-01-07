@@ -81,6 +81,22 @@ public class Commit implements Serializable, Dumpable {
                 '}';
     }
 
+    public String log() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("===\n");
+        builder.append(String.format("commit %s\n", getHash()));
+        if (getParent() != null && getSecondaryParent() != null) {
+            builder.append(
+                    String.format("Merge: %s %s\n",  getParent().substring(0, 7),  getSecondaryParent().substring(0, 7))
+            );
+        }
+        Formatter formatter = new Formatter().format("Date: %1$ta %1$tb %1$td %1$tT %1$tY %1$tz", getTimestamp());
+        String formattedDate = formatter.toString();
+        builder.append(String.format("%s\n", formattedDate));
+        builder.append(String.format("%s\n\n", getMessage()));
+        return builder.toString();
+    }
+
     @Override
     public void dump() {
         System.out.println(this);

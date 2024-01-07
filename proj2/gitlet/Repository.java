@@ -203,20 +203,7 @@ public class Repository {
     public static void log() {
         Commit currentCommit = getCurrentCommit();
         while (true) {
-            System.out.println("===");
-            System.out.printf("commit %s\n", currentCommit.getHash());
-            if (currentCommit.getParent() != null && currentCommit.getSecondaryParent() != null) {
-                System.out.printf(
-                        "Merge: %s %s\n",
-                        currentCommit.getParent().substring(0, 7),
-                        currentCommit.getSecondaryParent().substring(0, 7)
-                );
-            }
-            Formatter formatter = new Formatter().format("Date: %1$ta %1$tb %1$td %1$tT %1$tY %1$tz", currentCommit.getTimestamp());
-            String formattedDate = formatter.toString();
-            System.out.printf("%s\n", formattedDate);
-            System.out.printf("%s\n\n", currentCommit.getMessage());
-
+            System.out.print(currentCommit.log());
             if (currentCommit.getParent() == null) break;
             currentCommit = Commit.fromFile(COMMITS_DIR, currentCommit.getParent());
         }
