@@ -139,9 +139,4 @@ public class Commit implements Serializable, Dumpable {
         System.out.println(this);
     }
 
-    public static Commit fromFile(File commitsDirectory, String commitHash) {
-        File commitFile = join(commitsDirectory, commitHash);
-        return readObject(commitFile, Commit.class);
-    }
-
 }

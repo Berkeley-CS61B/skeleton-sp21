@@ -14,17 +14,19 @@ import static gitlet.Utils.*;
 public class Repository {
 
     /** The current working directory. */
-    public static final File CWD = new File(System.getProperty("user.dir"));
+    private static final File CWD = new File(System.getProperty("user.dir"));
     /** The .gitlet directory. */
-    public static final File GITLET_DIR = join(CWD, ".gitlet");
+    private static final File GITLET_DIR = join(CWD, ".gitlet");
 
-    public static final File COMMITS_DIR = join(GITLET_DIR, "commits");
-    public static final File BLOBS_DIR = join(GITLET_DIR, "blobs");
-    public static final File BRANCHES_DIR = join(GITLET_DIR, "branches");
-    public static final File HEAD_FILE = join(GITLET_DIR, "HEAD");
-    public static final File STAGED_DIR = join(GITLET_DIR, "staged");
-    public static final File ADDITION_DIR = join(STAGED_DIR, "addition");
-    public static final File REMOVAL_DIR = join(STAGED_DIR, "removal");
+    private static final File COMMITS_DIR = join(GITLET_DIR, "commits");
+    private static final File BLOBS_DIR = join(GITLET_DIR, "blobs");
+    private static final File BRANCHES_DIR = join(GITLET_DIR, "branches");
+    private static final File HEAD_FILE = join(GITLET_DIR, "HEAD");
+    private static final File STAGED_DIR = join(GITLET_DIR, "staged");
+    private static final File ADDITION_DIR = join(STAGED_DIR, "addition");
+    private static final File REMOVAL_DIR = join(STAGED_DIR, "removal");
+
+    private static CommitStore commitStore = new CommitStore(COMMITS_DIR);
 
     /**
      * Initialize the directory structure inside .gitlet
@@ -45,9 +47,8 @@ public class Repository {
         REMOVAL_DIR.mkdir();
         HEAD_FILE.createNewFile();
 
-//        Commit initialCommit = new Commit("initial commit", new Date(0), null, null, null);
         Commit initialCommit = new Commit.Builder("initial commit").timestamp(new Date(0)).build();
-        initialCommit.saveCommit(COMMITS_DIR);
+        commitStore.saveCommit(initialCommit);
 
         Branch masterBranch = new Branch("master", initialCommit.getHash());
         masterBranch.saveBranch(BRANCHES_DIR);
@@ -137,7 +138,7 @@ public class Repository {
                 .parent(currentCommit.getHash())
                 .trackedFiles(trackedFiles)
                 .build();
-        newCommit.saveCommit(COMMITS_DIR);
+        commitStore.saveCommit(newCommit);
 
         /* Update the pointer of the current branch to point to the newly-created commit */
         Branch branch = getCurrentBranch();
@@ -212,10 +213,9 @@ public class Repository {
      */
     public static void log() {
         Commit currentCommit = getCurrentCommit();
-        while (true) {
+        while (currentCommit != null) {
             System.out.print(currentCommit.log());
-            if (currentCommit.getParent() == null) break;
-            currentCommit = Commit.fromFile(COMMITS_DIR, currentCommit.getParent());
+            currentCommit = commitStore.getCommitById(currentCommit.getParent());
         }
     }
 
@@ -224,11 +224,10 @@ public class Repository {
      * The order of the commits does not matter
      */
     public static void globalLog() {
-       List<String> commitHashes = plainFilenamesIn(COMMITS_DIR);
-       commitHashes.forEach(hash -> {
-           Commit commit = Commit.fromFile(COMMITS_DIR, hash);
-           System.out.print(commit.log());
-       });
+        commitStore
+                .allCommitsStream()
+                .map(Commit::log)
+                .forEach(System.out::print);
     }
 
     /**
@@ -236,16 +235,14 @@ public class Repository {
      * Failure cases: If no such commit exists, prints the error message `Found no commit with that message.`
      */
     public static void find(String commitMessage) {
-        List<String> matchedCommitHashes = Objects.requireNonNull(plainFilenamesIn(COMMITS_DIR))
-                .stream()
-                .map(hash -> Commit.fromFile(COMMITS_DIR, hash))
-                .filter(commit -> commit.getMessage().equals(commitMessage))
-                .map(Commit::getHash)
-                .collect(Collectors.toList());
-        if (matchedCommitHashes.isEmpty()) {
+        List<Commit> matchedCommits = commitStore.getCommitsByMessage(commitMessage);
+        if (matchedCommits.isEmpty()) {
             exitWithMessage("Found no commit with that message.");
         }
-        matchedCommitHashes.forEach(System.out::println);
+        matchedCommits
+                .stream()
+                .map(Commit::getHash)
+                .forEach(System.out::println);
     }
 
     /**
@@ -322,18 +319,7 @@ public class Repository {
      *
      */
     public static void checkoutFile(String commitHash, String fileName) {
-        Commit commit = null;
-        if (join(COMMITS_DIR, commitHash).exists()) {
-            commit = Commit.fromFile(COMMITS_DIR, commitHash);
-        } else {
-            commit = Objects.requireNonNull(plainFilenamesIn(COMMITS_DIR))
-                    .stream()
-                    .filter(c -> c.startsWith(commitHash))
-                    .findFirst()
-                    .map(c -> Commit.fromFile(COMMITS_DIR, c))
-                    .orElse(null);
-        }
-
+        Commit commit = commitStore.getCommitById(commitHash);
         if (commit == null) {
             exitWithMessage("No commit with that id exists.");
         }
@@ -400,7 +386,7 @@ public class Repository {
         }
 
         Branch targetBranch = Branch.fromFile(BRANCHES_DIR, targetBranchName);
-        Commit targetCommit = Commit.fromFile(COMMITS_DIR, targetBranch.getHead());
+        Commit targetCommit = commitStore.getCommitById(targetBranch.getHead());
         for (Map.Entry<String, String> entry: targetCommit.getTrackedFiles().entrySet()) {
             File workingFile = join(CWD, entry.getKey());
             String contents = readContentsAsString(join(BLOBS_DIR, entry.getValue()));
@@ -450,27 +436,15 @@ public class Repository {
      * Move the current branch’s head to that commit node
      */
     public static void reset(String commitHash) {
-        Commit targetCommit = null;
-        if (join(COMMITS_DIR, commitHash).exists()) {
-            targetCommit = Commit.fromFile(COMMITS_DIR, commitHash);
-        } else {
-            targetCommit = Objects.requireNonNull(plainFilenamesIn(COMMITS_DIR))
-                    .stream()
-                    .filter(c -> c.startsWith(commitHash))
-                    .findFirst()
-                    .map(c -> Commit.fromFile(COMMITS_DIR, c))
-                    .orElse(null);
-        }
-
+        Commit targetCommit = commitStore.getCommitById(commitHash);
         if (targetCommit == null) {
             exitWithMessage("No targetCommit with that id exists.");
         }
 
         List<String> workingFiles = plainFilenamesIn(CWD);
-        Commit c = targetCommit;
         if (workingFiles
                 .stream()
-                .anyMatch(file -> !c.getTrackedFiles().containsKey(file))
+                .anyMatch(file -> !targetCommit.getTrackedFiles().containsKey(file))
         ) {
             exitWithMessage("There is an untracked file in the way; delete it, or add and commit it first.");
         }
@@ -501,13 +475,13 @@ public class Repository {
 
     private static Commit getCurrentCommit() {
         String commitHash = getCurrentBranch().getHead();
-        return Commit.fromFile(COMMITS_DIR, commitHash);
+        return commitStore.getCommitById(commitHash);
     }
 
     private static void setCurrentCommit(String commitHash) {
         Branch currentBranch = getCurrentBranch();
         currentBranch.setHead(commitHash);
-        currentBranch.saveBranch(COMMITS_DIR);
+        currentBranch.saveBranch(BRANCHES_DIR);
     }
 
     private static Branch getCurrentBranch() {
