@@ -30,6 +30,7 @@ public class Repository {
     private static final BranchStore branchStore = new BranchStore(BRANCHES_DIR);
     private static final StagingArea stagingArea = new StagingArea(ADDITION_DIR, REMOVAL_DIR);
     private static final Head head = new Head(HEAD_FILE);
+    private static final BlobStore blobStore = new BlobStore(BLOBS_DIR);
 
     /**
      * Initialize the directory structure inside .gitlet
@@ -121,8 +122,8 @@ public class Repository {
         /* Compute the SHA-1 hash of added/modified files and store them in the blobs directory */
         Map<String, String> nameToBlob = new TreeMap<>();
         addedFiles.forEach(file -> {
-            String hash = storeBlob(file);
-            nameToBlob.put(file.getName(), hash);
+            File storedBlob = blobStore.save(file);
+            nameToBlob.put(file.getName(), storedBlob.getName());
         });
 
         /* update the tracked list of files */
@@ -165,7 +166,7 @@ public class Repository {
             stagedForAdditionFile.delete();
         }
         if (trackedFiles.containsKey(filename)) {
-            File trackedFile = join(BLOBS_DIR, trackedFiles.get(filename));
+            File trackedFile = blobStore.get(trackedFiles.get(filename));
             stagingArea.stageFileForRemoval(trackedFile, filename);
             File workingFile = join(CWD, filename);
             if (workingFile.exists()) workingFile.delete();
@@ -326,7 +327,7 @@ public class Repository {
             exitWithMessage("File does not exist in that commit.");
         }
 
-        File blob = join(BLOBS_DIR, blobHash);
+        File blob = blobStore.get(blobHash);
         String blobContents = readContentsAsString(blob);
         writeContents(join(CWD, fileName), blobContents);
     }
@@ -378,7 +379,7 @@ public class Repository {
         Commit targetCommit = commitStore.getCommitById(targetBranch.getHead());
         for (Map.Entry<String, String> entry: targetCommit.getTrackedFiles().entrySet()) {
             File workingFile = join(CWD, entry.getKey());
-            String contents = readContentsAsString(join(BLOBS_DIR, entry.getValue()));
+            String contents = readContentsAsString(blobStore.get(entry.getValue()));
             writeContents(workingFile, contents);
         }
 
@@ -447,7 +448,7 @@ public class Repository {
 
         for (Map.Entry<String, String> entry: targetCommit.getTrackedFiles().entrySet()) {
             File workingFile = join(CWD, entry.getKey());
-            String contents = readContentsAsString(join(BLOBS_DIR, entry.getValue()));
+            String contents = readContentsAsString(blobStore.get(entry.getValue()));
             writeContents(workingFile, contents);
         }
 
@@ -471,13 +472,5 @@ public class Repository {
 
     private static void setCurrentBranch(Branch branch) {
         head.set(branch);
-    }
-
-    private static String storeBlob(File file) {
-        String contents = readContentsAsString(file);
-        String hash = sha1(contents);
-        File storedBlob = join(BLOBS_DIR, hash);
-        writeContents(storedBlob, contents);
-        return hash;
     }
 }
