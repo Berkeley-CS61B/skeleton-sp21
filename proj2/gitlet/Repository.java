@@ -29,6 +29,7 @@ public class Repository {
     private static final CommitStore commitStore = new CommitStore(COMMITS_DIR);
     private static final BranchStore branchStore = new BranchStore(BRANCHES_DIR);
     private static final StagingArea stagingArea = new StagingArea(ADDITION_DIR, REMOVAL_DIR);
+    private static final Head head = new Head(HEAD_FILE);
 
     /**
      * Initialize the directory structure inside .gitlet
@@ -465,12 +466,11 @@ public class Repository {
     }
 
     private static Branch getCurrentBranch() {
-        String branchName = readContentsAsString(HEAD_FILE);
-        return branchStore.getBranch(branchName);
+        return branchStore.getBranch(head.get());
     }
 
     private static void setCurrentBranch(Branch branch) {
-        writeContents(HEAD_FILE, branch.getName());
+        head.set(branch);
     }
 
     private static String storeBlob(File file) {
