@@ -79,6 +79,11 @@ public class Main {
                             incorrectOperands();
                     }
                     break;
+                case "branch":
+                    validateNumArgs(args, 2);
+                    branchName = args[1];
+                    Repository.branch(branchName);
+                    break;
                 default:
                     exitWithMessage("No command with that name exists.");
             }

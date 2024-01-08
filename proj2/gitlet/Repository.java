@@ -406,6 +406,19 @@ public class Repository {
         setCurrentBranch(targetBranchName);
     }
 
+    /**
+     * Creates a new branch with the given name, and points it at the current head commit
+     * This command does NOT immediately switch to the newly created branch (just as in real Git)
+     * If a branch with the given name already exists, print the error message `A branch with that name already exists`
+     */
+    public static void branch(String branchName) {
+        if (join(BRANCHES_DIR, branchName).exists()) {
+            exitWithMessage("A branch with that name already exists");
+        }
+        Branch branch = new Branch(branchName, getCurrentBranch().getHead());
+        branch.saveBranch(BRANCHES_DIR);
+    }
+
     private static Commit getCurrentCommit() {
         String commitHash = getCurrentBranch().getHead();
         return Commit.fromFile(COMMITS_DIR, commitHash);
