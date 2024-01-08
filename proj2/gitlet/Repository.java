@@ -28,6 +28,7 @@ public class Repository {
 
     private static final CommitStore commitStore = new CommitStore(COMMITS_DIR);
     private static final BranchStore branchStore = new BranchStore(BRANCHES_DIR);
+    private static final StagingArea stagingArea = new StagingArea(ADDITION_DIR, REMOVAL_DIR);
 
     /**
      * Initialize the directory structure inside .gitlet
@@ -67,21 +68,21 @@ public class Repository {
      *      - we are dealing with a flat directory structure
      */
     public static void add(String fileName) {
-        File workingFile = new File(fileName);
+        File workingFile = join(CWD, fileName);
         if (!workingFile.exists()) {
             exitWithMessage("File does not exist.");
         }
         String workingFileContents = readContentsAsString(workingFile);
-        File stagedFile = join(ADDITION_DIR, fileName);
+        File stagedFile = stagingArea.stageFileForAddition(workingFile);
         Commit currentCommit = getCurrentCommit();
         String committedFileHash = currentCommit.getTrackedFiles().get(fileName);
         if (sha1(workingFileContents).equals(committedFileHash)) {
-            if (stagedFile.exists()) stagedFile.delete();
+            if (stagedFile != null) stagedFile.delete();
             return;
         }
         writeContents(stagedFile, workingFileContents);
-        File stagedForRemovalFile = new File(REMOVAL_DIR, fileName);
-        if (stagedForRemovalFile.exists()) {
+        File stagedForRemovalFile = stagingArea.getFileForRemoval(fileName);
+        if (stagedForRemovalFile != null) {
             stagedForRemovalFile.delete();
         }
     }
@@ -109,17 +110,12 @@ public class Repository {
             exitWithMessage("Please enter a commit message.");
         }
 
-        List<File> addedFiles = Objects.requireNonNull(plainFilenamesIn(ADDITION_DIR))
-                .stream()
-                .map(fileName -> join(ADDITION_DIR, fileName))
-                .collect(Collectors.toList());
-        List<File> removedFiles = Objects.requireNonNull(plainFilenamesIn(REMOVAL_DIR))
-                .stream()
-                .map(fileName -> join(REMOVAL_DIR, fileName))
-                .collect(Collectors.toList());
-        if (addedFiles.isEmpty() && removedFiles.isEmpty()) {
+        if (stagingArea.isEmpty()) {
             exitWithMessage("No changes added to the commit.");
         }
+
+        List<File> addedFiles = stagingArea.getFilesForAddition();
+        List<File> removedFiles = stagingArea.getFilesForRemoval();
 
         /* Compute the SHA-1 hash of added/modified files and store them in the blobs directory */
         Map<String, String> nameToBlob = new TreeMap<>();
@@ -159,19 +155,18 @@ public class Repository {
      *      - remove it from the working directory if the user has not already done so
      */
     public static void rm(String filename) {
-        File stagedForAdditionFile = join(ADDITION_DIR, filename);
+        File stagedForAdditionFile = stagingArea.getFileForAddition(filename);
         Map<String, String> trackedFiles = getCurrentCommit().getTrackedFiles();
-        if (!stagedForAdditionFile.exists() && !trackedFiles.containsKey(filename)) {
+        if (stagedForAdditionFile == null && !trackedFiles.containsKey(filename)) {
             exitWithMessage("No reason to remove the file.");
         }
-        if (stagedForAdditionFile.exists()) {
+        if (stagedForAdditionFile != null) {
             stagedForAdditionFile.delete();
         }
         if (trackedFiles.containsKey(filename)) {
             File trackedFile = join(BLOBS_DIR, trackedFiles.get(filename));
-            File stagedForRemovalFile = join(REMOVAL_DIR, filename);
-            writeContents(stagedForRemovalFile, readContentsAsString(trackedFile));
-            File workingFile = new File(filename);
+            stagingArea.stageFileForRemoval(trackedFile, filename);
+            File workingFile = join(CWD, filename);
             if (workingFile.exists()) workingFile.delete();
         }
     }
@@ -293,13 +288,13 @@ public class Repository {
         System.out.println();
 
         System.out.println("=== Staged Files ===");
-        List<String> addedFiles = plainFilenamesIn(ADDITION_DIR);
-        addedFiles.forEach(System.out::println);
+        List<File> addedFiles = stagingArea.getFilesForAddition();
+        addedFiles.stream().map(File::getName).forEach(System.out::println);
         System.out.println();
 
         System.out.println("=== Removed Files ===");
-        List<String> removedFiles = plainFilenamesIn(REMOVAL_DIR);
-        removedFiles.forEach(System.out::println);
+        List<File> removedFiles = stagingArea.getFilesForRemoval();
+        removedFiles.stream().map(File::getName).forEach(System.out::println);
         System.out.println();
 
         System.out.println("=== Modifications Not Staged For Commit ===");
@@ -377,15 +372,7 @@ public class Repository {
             join(CWD, file).delete();
         }
 
-        List<String> addedFiles = plainFilenamesIn(ADDITION_DIR);
-        for (String file: addedFiles) {
-            join(ADDITION_DIR, file).delete();
-        }
-
-        List<String> removedFiles = plainFilenamesIn(REMOVAL_DIR);
-        for (String file: removedFiles) {
-            join(REMOVAL_DIR, file).delete();
-        }
+        stagingArea.getFiles().forEach(File::delete);
 
         Commit targetCommit = commitStore.getCommitById(targetBranch.getHead());
         for (Map.Entry<String, String> entry: targetCommit.getTrackedFiles().entrySet()) {
@@ -455,15 +442,7 @@ public class Repository {
                 .map(fileName -> join(CWD, fileName))
                 .forEach(File::delete);
 
-        plainFilenamesIn(ADDITION_DIR)
-                .stream()
-                .map(fileName -> join(ADDITION_DIR, fileName))
-                .forEach(File::delete);
-
-        plainFilenamesIn(REMOVAL_DIR)
-                .stream()
-                .map(fileName -> join(REMOVAL_DIR, fileName))
-                .forEach(File::delete);
+        stagingArea.getFiles().forEach(File::delete);
 
         for (Map.Entry<String, String> entry: targetCommit.getTrackedFiles().entrySet()) {
             File workingFile = join(CWD, entry.getKey());
