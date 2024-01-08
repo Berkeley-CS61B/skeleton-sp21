@@ -309,6 +309,103 @@ public class Repository {
         System.out.println();
     }
 
+    /**
+     * Takes the version of the file as it exists in the commit with the given id, and puts it in the working directory,
+     *      overwriting the version of the file that’s already there if there is one.
+     * The new version of the file is not staged.
+     * If no commit with the given id exists, print `No commit with that id exists.`
+     * If the file does not exist in the previous commit, print the error message `File does not exist in that commit.`
+     *
+     */
+    public static void checkoutFile(String commitHash, String fileName) {
+        Commit commit = null;
+        if (join(COMMITS_DIR, commitHash).exists()) {
+            commit = Commit.fromFile(COMMITS_DIR, commitHash);
+        } else {
+            commit = Objects.requireNonNull(plainFilenamesIn(COMMITS_DIR))
+                    .stream()
+                    .filter(c -> c.startsWith(commitHash))
+                    .findFirst()
+                    .map(c -> Commit.fromFile(COMMITS_DIR, c))
+                    .orElse(null);
+        }
+
+        if (commit == null) {
+            exitWithMessage("No commit with that id exists.");
+        }
+
+        String blobHash = commit.getTrackedFiles().get(fileName);
+        if (blobHash == null) {
+            exitWithMessage("File does not exist in that commit.");
+        }
+
+        File blob = join(BLOBS_DIR, blobHash);
+        String blobContents = readContentsAsString(blob);
+        writeContents(join(CWD, fileName), blobContents);
+    }
+
+    /**
+     * Checkout a file in the current commit
+     */
+    public static void checkoutFile(String fileName) {
+        checkoutFile(getCurrentCommit().getHash(), fileName);
+    }
+
+    /**
+     * Takes all files in the commit at the head of the given branch, and puts them in the working directory,
+     *      overwriting the versions of the files that are already there if they exist
+     * If that branch is the current branch, print `No need to checkout the current branch.`
+     * If no branch with that name exists, print `No such branch exists.`
+     * If a working file is untracked in the current branch and would be overwritten by the checkout,
+     *      print `There is an untracked file in the way; delete it, or add and commit it first.`
+     * Any files that are tracked in the current branch but are not present in the checked-out branch are deleted
+     * The staging area is cleared, unless the checked-out branch is the current branch
+     * Given branch will now be considered the current branch (HEAD)
+     */
+    public static void checkoutBranch(String targetBranchName) {
+        Branch currentBranch = getCurrentBranch();
+        if (targetBranchName.equals(currentBranch.getName())) {
+            exitWithMessage("No need to checkout the current branch.");
+        }
+
+        if (!join(BRANCHES_DIR, targetBranchName).exists()) {
+            exitWithMessage("No such branch exists.");
+        }
+
+        Commit currentCommit = getCurrentCommit();
+        List<String> workingFiles = plainFilenamesIn(CWD);
+        if (workingFiles
+                .stream()
+                .anyMatch(file -> !currentCommit.getTrackedFiles().containsKey(file))
+        ) {
+            exitWithMessage("There is an untracked file in the way; delete it, or add and commit it first.");
+        }
+
+        for (String file: workingFiles) {
+            join(CWD, file).delete();
+        }
+
+        List<String> addedFiles = plainFilenamesIn(ADDITION_DIR);
+        for (String file: addedFiles) {
+            join(ADDITION_DIR, file).delete();
+        }
+
+        List<String> removedFiles = plainFilenamesIn(REMOVAL_DIR);
+        for (String file: removedFiles) {
+            join(REMOVAL_DIR, file).delete();
+        }
+
+        Branch targetBranch = Branch.fromFile(BRANCHES_DIR, targetBranchName);
+        Commit targetCommit = Commit.fromFile(COMMITS_DIR, targetBranch.getHead());
+        for (Map.Entry<String, String> entry: targetCommit.getTrackedFiles().entrySet()) {
+            File workingFile = join(CWD, entry.getKey());
+            String contents = readContentsAsString(join(BLOBS_DIR, entry.getValue()));
+            writeContents(workingFile, contents);
+        }
+
+        setCurrentBranch(targetBranchName);
+    }
+
     private static Commit getCurrentCommit() {
         String commitHash = getCurrentBranch().getHead();
         return Commit.fromFile(COMMITS_DIR, commitHash);

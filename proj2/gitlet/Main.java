@@ -18,6 +18,8 @@ public class Main {
         String command = args[0];
         String fileName;
         String message;
+        String commitHash;
+        String branchName;
         try {
             switch (command) {
                 case "init":
@@ -56,6 +58,27 @@ public class Main {
                     validateNumArgs(args, 1);
                     Repository.status();
                     break;
+                case "checkout":
+                    switch (args.length) {
+                        case 2:
+                            branchName = args[1];
+                            Repository.checkoutBranch(branchName);
+                            break;
+                        case 3:
+                            if (!args[1].equals("--")) incorrectOperands();
+                            fileName = args[2];
+                            Repository.checkoutFile(fileName);
+                            break;
+                        case 4:
+                            if (!args[2].equals("--")) incorrectOperands();
+                            commitHash = args[1];
+                            fileName = args[3];
+                            Repository.checkoutFile(commitHash, fileName);
+                            break;
+                        default:
+                            incorrectOperands();
+                    }
+                    break;
                 default:
                     exitWithMessage("No command with that name exists.");
             }
@@ -67,7 +90,11 @@ public class Main {
 
     public static void validateNumArgs(String[] args, int n) {
         if (args.length != n) {
-            exitWithMessage("Incorrect operands.");
+            incorrectOperands();
         }
+    }
+
+    public static void incorrectOperands() {
+        exitWithMessage("Incorrect operands.");
     }
 }
