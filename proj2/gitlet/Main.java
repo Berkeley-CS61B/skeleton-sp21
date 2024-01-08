@@ -89,6 +89,11 @@ public class Main {
                     branchName = args[1];
                     Repository.rmBranch(branchName);
                     break;
+                case "reset":
+                    validateNumArgs(args, 2);
+                    commitHash = args[1];
+                    Repository.reset(commitHash);
+                    break;
                 default:
                     exitWithMessage("No command with that name exists.");
             }

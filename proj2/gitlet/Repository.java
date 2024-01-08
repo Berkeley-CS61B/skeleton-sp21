@@ -435,9 +435,75 @@ public class Repository {
         branchFile.delete();
     }
 
+    /**
+     * Checks out all the files tracked by the given commit
+     *      The [commit id] may be abbreviated as for checkout
+     * If no commit with the given id exists, print `No commit with that id exists.`
+     * If a working file is untracked in the current branch and would be overwritten by the reset,
+     *      print `There is an untracked file in the way; delete it, or add and commit it first.`
+     * Remove tracked files that are not present in that commit
+     * Clear the staging area
+     * Move the current branch’s head to that commit node
+     */
+    public static void reset(String commitHash) {
+        Commit targetCommit = null;
+        if (join(COMMITS_DIR, commitHash).exists()) {
+            targetCommit = Commit.fromFile(COMMITS_DIR, commitHash);
+        } else {
+            targetCommit = Objects.requireNonNull(plainFilenamesIn(COMMITS_DIR))
+                    .stream()
+                    .filter(c -> c.startsWith(commitHash))
+                    .findFirst()
+                    .map(c -> Commit.fromFile(COMMITS_DIR, c))
+                    .orElse(null);
+        }
+
+        if (targetCommit == null) {
+            exitWithMessage("No targetCommit with that id exists.");
+        }
+
+        List<String> workingFiles = plainFilenamesIn(CWD);
+        Commit c = targetCommit;
+        if (workingFiles
+                .stream()
+                .anyMatch(file -> !c.getTrackedFiles().containsKey(file))
+        ) {
+            exitWithMessage("There is an untracked file in the way; delete it, or add and commit it first.");
+        }
+
+        workingFiles
+                .stream()
+                .map(fileName -> join(CWD, fileName))
+                .forEach(File::delete);
+
+        plainFilenamesIn(ADDITION_DIR)
+                .stream()
+                .map(fileName -> join(ADDITION_DIR, fileName))
+                .forEach(File::delete);
+
+        plainFilenamesIn(REMOVAL_DIR)
+                .stream()
+                .map(fileName -> join(REMOVAL_DIR, fileName))
+                .forEach(File::delete);
+
+        for (Map.Entry<String, String> entry: targetCommit.getTrackedFiles().entrySet()) {
+            File workingFile = join(CWD, entry.getKey());
+            String contents = readContentsAsString(join(BLOBS_DIR, entry.getValue()));
+            writeContents(workingFile, contents);
+        }
+
+        setCurrentCommit(targetCommit.getHash());
+    }
+
     private static Commit getCurrentCommit() {
         String commitHash = getCurrentBranch().getHead();
         return Commit.fromFile(COMMITS_DIR, commitHash);
+    }
+
+    private static void setCurrentCommit(String commitHash) {
+        Branch currentBranch = getCurrentBranch();
+        currentBranch.setHead(commitHash);
+        currentBranch.saveBranch(COMMITS_DIR);
     }
 
     private static Branch getCurrentBranch() {
