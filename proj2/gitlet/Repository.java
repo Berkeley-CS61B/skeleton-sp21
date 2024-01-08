@@ -45,7 +45,8 @@ public class Repository {
         REMOVAL_DIR.mkdir();
         HEAD_FILE.createNewFile();
 
-        Commit initialCommit = new Commit("initial commit", new Date(0), null, null, null);
+//        Commit initialCommit = new Commit("initial commit", new Date(0), null, null, null);
+        Commit initialCommit = new Commit.Builder("initial commit").timestamp(new Date(0)).build();
         initialCommit.saveCommit(COMMITS_DIR);
 
         Branch masterBranch = new Branch("master", initialCommit.getHash());
@@ -132,7 +133,10 @@ public class Repository {
         removedFiles.forEach(file -> trackedFiles.remove(file.getName()));
 
         /* Build and save the commit */
-        Commit newCommit = new Commit(message, new Date(), trackedFiles, currentCommit.getHash(), null);
+        Commit newCommit = new Commit.Builder(message)
+                .parent(currentCommit.getHash())
+                .trackedFiles(trackedFiles)
+                .build();
         newCommit.saveCommit(COMMITS_DIR);
 
         /* Update the pointer of the current branch to point to the newly-created commit */

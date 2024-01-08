@@ -19,13 +19,50 @@ public class Commit implements Serializable, Dumpable {
     private final Map<String, String> trackedFiles;
     private final String hash;
 
-    public Commit(String message, Date timestamp, Map<String, String> trackedFiles, String parent, String secondaryParent) {
+    private Commit(String message, Date timestamp, String parent, String secondaryParent, Map<String, String> trackedFiles) {
         this.message = message;
         this.timestamp = (timestamp != null) ? timestamp : new Date();
         this.parent = parent;
         this.secondaryParent = secondaryParent;
         this.trackedFiles = (trackedFiles != null) ? trackedFiles : new TreeMap<>();
         this.hash = generateHash();
+    }
+
+    /* Builder class */
+    public static class Builder {
+        private String message;
+        private Date timestamp;
+        private String parent;
+        private String secondaryParent;
+        private Map<String, String> trackedFiles;
+
+        public Builder(String message) {
+            this.message = message;
+        }
+
+        public Builder timestamp(Date timestamp) {
+            this.timestamp = timestamp;
+            return this;
+        }
+
+        public Builder parent(String parent) {
+            this.parent = parent;
+            return this;
+        }
+
+        public Builder secondaryParent(String secondaryParent) {
+            this.secondaryParent = secondaryParent;
+            return this;
+        }
+
+        public Builder trackedFiles(Map<String, String> trackedFiles) {
+            this.trackedFiles = trackedFiles;
+            return this;
+        }
+
+        public Commit build() {
+            return new Commit(message, timestamp, parent, secondaryParent, trackedFiles);
+        }
     }
 
     private String generateHash() {
