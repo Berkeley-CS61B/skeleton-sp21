@@ -32,11 +32,6 @@ public class Branch implements Serializable, Dumpable {
         this.head = head;
     }
 
-    public void saveBranch(File branchesDirectory) {
-        File branchFile = join(branchesDirectory, name);
-        writeObject(branchFile, this);
-    }
-
     @Override
     public String toString() {
         return "Branch{" +
@@ -48,11 +43,6 @@ public class Branch implements Serializable, Dumpable {
     @Override
     public void dump() {
         System.out.println(this);
-    }
-
-    public static Branch fromFile(File branchesDirectory, String branchName) {
-        File branchFile = join(branchesDirectory, branchName);
-        return readObject(branchFile, Branch.class);
     }
 
 }

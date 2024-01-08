@@ -26,7 +26,8 @@ public class Repository {
     private static final File ADDITION_DIR = join(STAGED_DIR, "addition");
     private static final File REMOVAL_DIR = join(STAGED_DIR, "removal");
 
-    private static CommitStore commitStore = new CommitStore(COMMITS_DIR);
+    private static final CommitStore commitStore = new CommitStore(COMMITS_DIR);
+    private static final BranchStore branchStore = new BranchStore(BRANCHES_DIR);
 
     /**
      * Initialize the directory structure inside .gitlet
@@ -51,9 +52,9 @@ public class Repository {
         commitStore.saveCommit(initialCommit);
 
         Branch masterBranch = new Branch("master", initialCommit.getHash());
-        masterBranch.saveBranch(BRANCHES_DIR);
+        branchStore.saveBranch(masterBranch);
 
-        setCurrentBranch(masterBranch.getName());
+        setCurrentBranch(masterBranch);
     }
 
     /**
@@ -143,7 +144,7 @@ public class Repository {
         /* Update the pointer of the current branch to point to the newly-created commit */
         Branch branch = getCurrentBranch();
         branch.setHead(newCommit.getHash());
-        branch.saveBranch(BRANCHES_DIR);
+        branchStore.saveBranch(branch);
 
         /* Clear the staging area */
         addedFiles.forEach(File::delete);
@@ -281,13 +282,13 @@ public class Repository {
      */
     public static void status() {
         System.out.println("=== Branches ===");
-        List<String> branches = plainFilenamesIn(BRANCHES_DIR);
+        List<Branch> branches = branchStore.allBranches();
         Branch currentBranch = getCurrentBranch();
         branches.forEach(branch -> {
-            if (branch.equals(currentBranch.getName())) {
+            if (branch.getName().equals(currentBranch.getName())) {
                 System.out.print("*");
-                System.out.println(branch);
             }
+            System.out.println(branch.getName());
         });
         System.out.println();
 
@@ -358,7 +359,8 @@ public class Repository {
             exitWithMessage("No need to checkout the current branch.");
         }
 
-        if (!join(BRANCHES_DIR, targetBranchName).exists()) {
+        Branch targetBranch = branchStore.getBranch(targetBranchName);
+        if (targetBranch == null) {
             exitWithMessage("No such branch exists.");
         }
 
@@ -385,7 +387,6 @@ public class Repository {
             join(REMOVAL_DIR, file).delete();
         }
 
-        Branch targetBranch = Branch.fromFile(BRANCHES_DIR, targetBranchName);
         Commit targetCommit = commitStore.getCommitById(targetBranch.getHead());
         for (Map.Entry<String, String> entry: targetCommit.getTrackedFiles().entrySet()) {
             File workingFile = join(CWD, entry.getKey());
@@ -393,7 +394,7 @@ public class Repository {
             writeContents(workingFile, contents);
         }
 
-        setCurrentBranch(targetBranchName);
+        setCurrentBranch(targetBranch);
     }
 
     /**
@@ -402,11 +403,11 @@ public class Repository {
      * If a branch with the given name already exists, print the error message `A branch with that name already exists`
      */
     public static void branch(String branchName) {
-        if (join(BRANCHES_DIR, branchName).exists()) {
+        if (branchStore.getBranch(branchName) != null) {
             exitWithMessage("A branch with that name already exists");
         }
         Branch branch = new Branch(branchName, getCurrentBranch().getHead());
-        branch.saveBranch(BRANCHES_DIR);
+        branchStore.saveBranch(branch);
     }
 
     /**
@@ -418,11 +419,11 @@ public class Repository {
         if (getCurrentBranch().getName().equals(branchName)) {
             exitWithMessage("Cannot remove the current branch.");
         }
-        File branchFile = join(BRANCHES_DIR, branchName);
-        if (!branchFile.exists()) {
+        Branch branch = branchStore.getBranch(branchName);
+        if (branch == null) {
             exitWithMessage("A branch with that name does not exist.");
         }
-        branchFile.delete();
+        branchStore.removeBranch(branch);
     }
 
     /**
@@ -481,16 +482,16 @@ public class Repository {
     private static void setCurrentCommit(String commitHash) {
         Branch currentBranch = getCurrentBranch();
         currentBranch.setHead(commitHash);
-        currentBranch.saveBranch(BRANCHES_DIR);
+        branchStore.saveBranch(currentBranch);
     }
 
     private static Branch getCurrentBranch() {
         String branchName = readContentsAsString(HEAD_FILE);
-        return Branch.fromFile(BRANCHES_DIR, branchName);
+        return branchStore.getBranch(branchName);
     }
 
-    private static void setCurrentBranch(String branchName) {
-        writeContents(HEAD_FILE, branchName);
+    private static void setCurrentBranch(Branch branch) {
+        writeContents(HEAD_FILE, branch.getName());
     }
 
     private static String storeBlob(File file) {
