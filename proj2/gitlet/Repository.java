@@ -419,6 +419,22 @@ public class Repository {
         branch.saveBranch(BRANCHES_DIR);
     }
 
+    /**
+     * Deletes the branch with the given name
+     * If a branch with the given name does not exist, print `A branch with that name does not exist.`
+     * If applied to the branch we are currently in, print `Cannot remove the current branch.`
+     */
+    public static void rmBranch(String branchName) {
+        if (getCurrentBranch().getName().equals(branchName)) {
+            exitWithMessage("Cannot remove the current branch.");
+        }
+        File branchFile = join(BRANCHES_DIR, branchName);
+        if (!branchFile.exists()) {
+            exitWithMessage("A branch with that name does not exist.");
+        }
+        branchFile.delete();
+    }
+
     private static Commit getCurrentCommit() {
         String commitHash = getCurrentBranch().getHead();
         return Commit.fromFile(COMMITS_DIR, commitHash);

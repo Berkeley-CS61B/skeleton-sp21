@@ -84,6 +84,11 @@ public class Main {
                     branchName = args[1];
                     Repository.branch(branchName);
                     break;
+                case "rm-branch":
+                    validateNumArgs(args, 2);
+                    branchName = args[1];
+                    Repository.rmBranch(branchName);
+                    break;
                 default:
                     exitWithMessage("No command with that name exists.");
             }
