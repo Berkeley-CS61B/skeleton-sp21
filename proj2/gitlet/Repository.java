@@ -92,14 +92,12 @@ public class Repository {
      * For each added/modified files in the staging area,
      *      - Compute its SHA-1 hash as a function of its contents
      *      - Copy it to the blobs directory and set its to its SHA-1 hash
-     * Build the commit:
-     *      - Set the commit message
-     *      - Set the timestamp to now
+     * Build the commit
      *      - Reuse all tracked files from the parent commit
      *      - Rewire the references of the added/modified files
      *      - Untrack removed files
      *      - Point to the parent commit
-     * Save the commit on disk in the commits directory
+     * Save the commit on disk
      * Update the pointer of the current branch to point to the new commit
      * Clear the staging area
      */
@@ -124,14 +122,12 @@ public class Repository {
         trackedFiles.putAll(nameToBlob);
         stagingArea.getFilesForRemoval().forEach(file -> trackedFiles.remove(file.getName()));
 
-        /* Build and save the commit */
         Commit newCommit = new Commit.Builder(message)
                 .parent(getCurrentCommit().getHash())
                 .trackedFiles(trackedFiles)
                 .build();
         commitStore.saveCommit(newCommit);
 
-        /* Make the current branch point to the newly-created commit */
         Branch branch = getCurrentBranch();
         branch.setCommit(newCommit.getHash());
         branchStore.saveBranch(branch);
@@ -140,7 +136,7 @@ public class Repository {
     }
 
     /**
-     * If the file is neither staged nor tracked by the head commit, print the error message `No reason to remove the file.`
+     * If the file is neither staged nor tracked by the head commit, print `No reason to remove the file.`
      * If the file is currently staged for addition, unstage it
      * If the file is tracked in the current commit,
      *      - stage it for removal
@@ -165,38 +161,7 @@ public class Repository {
     /**
      * Display information about each commit backwards along the commit tree
      *      starting from the commit in the current HEAD until the initial commit
-     * Following the first parent commit links, ignoring any secondary parents found in merge commits
-     * For every node in this history, the information it should display is:
-     *      the commit id, the time the commit was made, and the commit message
-     * Example:
-     * ```
-     * ===
-     * commit a0da1ea5a15ab613bf9961fd86f010cf74c7ee48
-     * Date: Thu Nov 9 20:00:05 2017 -0800
-     * A commit message.
-     *
-     * ===
-     * commit 3e8bf1d794ca2e9ef8a4007275acf3751c7170ff
-     * Date: Thu Nov 9 17:01:33 2017 -0800
-     * Another commit message.
-     *
-     * ===
-     * commit e881c9575d180a215d1a636545b8fd9abfb1d2bb
-     * Date: Wed Dec 31 16:00:00 1969 -0800
-     * initial commit
-     * ```
-     * There is a === before each commit and an empty line after it
-     * Each entry displays the unique SHA-1 id of the commit object
-     * The timestamps displayed in the commits reflect the current timezone, not UTC
-     * For merge commits (those that have two parent commits), add a line just below the first, as in
-     * ```
-     * commit 3e8bf1d794ca2e9ef8a4007275acf3751c7170ff
-     * Merge: 4975af1 2c1ead1
-     * Date: Sat Nov 11 12:30:00 2017 -0800
-     * Merged development into master.
-     * ```
-     * The two hexadecimal numerals following “Merge:” consist of the first seven digits of the first and second parents’ commit ids
-     * The first parent is the branch you were on when you did the merge; the second is that of the merged-in branch
+     * More info in Commit::log()
      */
     public static void log() {
         Commit currentCommit = getCurrentCommit();
@@ -219,7 +184,7 @@ public class Repository {
 
     /**
      * Prints out the ids of all commits that have the given commit message, one per line
-     * Failure cases: If no such commit exists, prints the error message `Found no commit with that message.`
+     * If no such commit exists, print `Found no commit with that message.`
      */
     public static void find(String commitMessage) {
         List<Commit> matchedCommits = commitStore.getCommitsByMessage(commitMessage);
@@ -235,29 +200,7 @@ public class Repository {
     /**
      * Displays what branches currently exist, and marks the current branch with a *
      * Displays what files have been staged for addition or removal
-     * Example:
-     * ```
-     * === Branches ===
-     * *master
-     * other-branch
-     *
-     * === Staged Files ===
-     * wug.txt
-     * wug2.txt
-     *
-     * === Removed Files ===
-     * goodbye.txt
-     *
-     * === Modifications Not Staged For Commit ===
-     * junk.txt (deleted)
-     * wug3.txt (modified)
-     *
-     * === Untracked Files ===
-     * random.stuff
-     * ```
-     * There is an empty line between sections, and the entire status ends in an empty line as well
-     * Entries should be listed in lexicographic order,
-     *      using the Java string-comparison order (the asterisk doesn’t count)
+     * Entries are listed in lexicographic order
      * A file in the working directory is “modified but not staged” if it is
      *      - Tracked in the current commit, changed in the working directory, but not staged; or
      *      - Staged for addition, but with different contents than in the working directory; or
@@ -300,10 +243,9 @@ public class Repository {
     /**
      * Takes the version of the file as it exists in the commit with the given id, and puts it in the working directory,
      *      overwriting the version of the file that’s already there if there is one.
-     * The new version of the file is not staged.
      * If no commit with the given id exists, print `No commit with that id exists.`
-     * If the file does not exist in the previous commit, print the error message `File does not exist in that commit.`
-     *
+     * If the file does not exist in the previous commit, print `File does not exist in that commit.`
+     * The new version of the file is not staged.
      */
     public static void checkoutFile(String commitHash, String fileName) {
         Commit commit = commitStore.getCommitByHash(commitHash);
@@ -322,14 +264,14 @@ public class Repository {
     }
 
     /**
-     * Checkout a file in the current commit
+     * same as checkoutFile(String commitHash, String fileName) except that commitHash is the current commit hash
      */
     public static void checkoutFile(String fileName) {
         checkoutFile(getCurrentCommit().getHash(), fileName);
     }
 
     /**
-     * Reset the current working to a given commit
+     * Reset the current working directory to a given commit
      * If a working file is untracked in the current branch and would be overwritten by the checkout,
      *      print `There is an untracked file in the way; delete it, or add and commit it first.`
      * Clears the staging area
