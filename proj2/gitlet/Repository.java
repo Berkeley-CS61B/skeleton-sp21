@@ -202,7 +202,7 @@ public class Repository {
         Commit currentCommit = getCurrentCommit();
         while (currentCommit != null) {
             System.out.print(currentCommit.log());
-            currentCommit = commitStore.getCommitById(currentCommit.getParent());
+            currentCommit = commitStore.getCommitByHash(currentCommit.getParent());
         }
     }
 
@@ -306,7 +306,7 @@ public class Repository {
      *
      */
     public static void checkoutFile(String commitHash, String fileName) {
-        Commit commit = commitStore.getCommitById(commitHash);
+        Commit commit = commitStore.getCommitByHash(commitHash);
         if (commit == null) {
             exitWithMessage("No commit with that id exists.");
         }
@@ -365,7 +365,7 @@ public class Repository {
 
         stagingArea.getFiles().forEach(File::delete);
 
-        Commit targetCommit = commitStore.getCommitById(targetBranch.getCommitHash());
+        Commit targetCommit = commitStore.getCommitByHash(targetBranch.getCommitHash());
         for (Map.Entry<String, String> entry: targetCommit.getTrackedFiles().entrySet()) {
             File workingFile = join(CWD, entry.getKey());
             String contents = readContentsAsString(blobStore.get(entry.getValue()));
@@ -415,7 +415,7 @@ public class Repository {
      * Move the current branch’s head to that commit node
      */
     public static void reset(String commitHash) {
-        Commit targetCommit = commitStore.getCommitById(commitHash);
+        Commit targetCommit = commitStore.getCommitByHash(commitHash);
         if (targetCommit == null) {
             exitWithMessage("No targetCommit with that id exists.");
         }
@@ -446,7 +446,7 @@ public class Repository {
 
     private static Commit getCurrentCommit() {
         String commitHash = getCurrentBranch().getCommitHash();
-        return commitStore.getCommitById(commitHash);
+        return commitStore.getCommitByHash(commitHash);
     }
 
     private static void setCurrentCommit(String commitHash) {

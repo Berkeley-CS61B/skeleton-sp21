@@ -18,7 +18,7 @@ public class CommitStore {
         }
     }
 
-    public Commit getCommitById(String commitId) {
+    public Commit getCommitByHash(String commitId) {
         if (commitId == null) return null;
         File commitFile = join(COMMITS_DIR, commitId);
         if (commitFile.exists()) {
@@ -48,6 +48,6 @@ public class CommitStore {
     public Stream<Commit> allCommitsStream() {
         return Objects.requireNonNull(plainFilenamesIn(COMMITS_DIR))
                 .stream()
-                .map(this::getCommitById);
+                .map(this::getCommitByHash);
     }
 }
