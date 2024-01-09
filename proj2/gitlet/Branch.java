@@ -1,19 +1,14 @@
 package gitlet;
 
-import java.io.File;
 import java.io.Serializable;
-
-import static gitlet.Utils.*;
 
 public class Branch implements Serializable, Dumpable {
     private String name;
+    private String commitHash;
 
-    /** hash of the commit pointed to by this branch */
-    private String head;
-
-    public Branch(String name, String head) {
+    public Branch(String name, String commitHash) {
         this.name = name;
-        this.head = head;
+        this.commitHash = commitHash;
     }
 
     public String getName() {
@@ -24,19 +19,23 @@ public class Branch implements Serializable, Dumpable {
         this.name = name;
     }
 
-    public String getHead() {
-        return head;
+    public String getCommitHash() {
+        return commitHash;
     }
 
-    public void setHead(String head) {
-        this.head = head;
+    public void setCommit(Commit commit) {
+        this.commitHash = commit.getHash();
+    }
+
+    public void setCommit(String commitHash) {
+        this.commitHash = commitHash;
     }
 
     @Override
     public String toString() {
         return "Branch{" +
                 "name='" + name + '\'' +
-                ", head='" + head + '\'' +
+                ", head='" + commitHash + '\'' +
                 '}';
     }
 

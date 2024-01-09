@@ -133,7 +133,7 @@ public class Repository {
 
         /* Make the current branch point to the newly-created commit */
         Branch branch = getCurrentBranch();
-        branch.setHead(newCommit.getHash());
+        branch.setCommit(newCommit.getHash());
         branchStore.saveBranch(branch);
 
         stagingArea.clear();
@@ -366,7 +366,7 @@ public class Repository {
 
         stagingArea.getFiles().forEach(File::delete);
 
-        Commit targetCommit = commitStore.getCommitById(targetBranch.getHead());
+        Commit targetCommit = commitStore.getCommitById(targetBranch.getCommitHash());
         for (Map.Entry<String, String> entry: targetCommit.getTrackedFiles().entrySet()) {
             File workingFile = join(CWD, entry.getKey());
             String contents = readContentsAsString(blobStore.get(entry.getValue()));
@@ -385,7 +385,7 @@ public class Repository {
         if (branchStore.getBranch(branchName) != null) {
             exitWithMessage("A branch with that name already exists");
         }
-        Branch branch = new Branch(branchName, getCurrentBranch().getHead());
+        Branch branch = new Branch(branchName, getCurrentBranch().getCommitHash());
         branchStore.saveBranch(branch);
     }
 
@@ -446,13 +446,13 @@ public class Repository {
     }
 
     private static Commit getCurrentCommit() {
-        String commitHash = getCurrentBranch().getHead();
+        String commitHash = getCurrentBranch().getCommitHash();
         return commitStore.getCommitById(commitHash);
     }
 
     private static void setCurrentCommit(String commitHash) {
         Branch currentBranch = getCurrentBranch();
-        currentBranch.setHead(commitHash);
+        currentBranch.setCommit(commitHash);
         branchStore.saveBranch(currentBranch);
     }
 
