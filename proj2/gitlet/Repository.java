@@ -153,13 +153,12 @@ public class Repository {
             exitWithMessage("No reason to remove the file.");
         }
         if (stagedForAdditionFile != null) {
-            stagedForAdditionFile.delete();
+            stagingArea.unstageForAddition(filename);
         }
         if (trackedFiles.containsKey(filename)) {
             File trackedFile = blobStore.get(trackedFiles.get(filename));
             stagingArea.stageForRemoval(readContentsAsString(trackedFile), filename);
-            File workingFile = join(CWD, filename);
-            if (workingFile.exists()) workingFile.delete();
+            workingArea.deleteFile(filename);
         }
     }
 
