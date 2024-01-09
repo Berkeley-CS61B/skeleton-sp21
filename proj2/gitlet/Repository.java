@@ -25,6 +25,7 @@ public class Repository {
     private static final File ADDITION_DIR = join(STAGED_DIR, "addition");
     private static final File REMOVAL_DIR = join(STAGED_DIR, "removal");
 
+    private static final WorkingArea workingArea = new WorkingArea(CWD);
     private static final CommitStore commitStore = new CommitStore(COMMITS_DIR);
     private static final BranchStore branchStore = new BranchStore(BRANCHES_DIR);
     private static final StagingArea stagingArea = new StagingArea(ADDITION_DIR, REMOVAL_DIR);
@@ -60,31 +61,29 @@ public class Repository {
     }
 
     /**
-     * If the file does not exist, print the error message `File does not exist.` and exit without changing anything.
+     * Add a file in the working directory to the staging area
+     * If the file does not exist, print `File does not exist.`
      * If the current working version of the file is identical to the version in the current commit,
      *      do not stage it to be added, and remove it from the staging area if it is already there.
      * Staging an already-staged file overwrites the previous entry in the staging area with the new contents.
+     * Stage the file for addition
      * If the file was staged for removal, it will no longer be after executing the command
-     * Make a copy of the file to .gitlet/STAGED_DIR/ADDITION_DIR/file_name
-     *      - we are dealing with a flat directory structure
      */
     public static void add(String fileName) {
-        File workingFile = join(CWD, fileName);
-        if (!workingFile.exists()) {
+        File workingFile = workingArea.getFile(fileName);
+        if (workingFile == null) {
             exitWithMessage("File does not exist.");
         }
-        String workingFileContents = readContentsAsString(workingFile);
-        File stagedFile = stagingArea.stageForAddition(workingFile);
-        Commit currentCommit = getCurrentCommit();
-        String committedFileHash = currentCommit.getTrackedFiles().get(fileName);
-        if (sha1(workingFileContents).equals(committedFileHash)) {
-            if (stagedFile != null) stagedFile.delete();
-            return;
+
+        String committedFileHash = getCurrentCommit().getTrackedFiles().get(fileName);
+        String workingFileHash = sha1(readContentsAsString(workingFile));
+        if (!workingFileHash.equals(committedFileHash)) {
+            stagingArea.stageForAddition(workingFile);
+        } else {
+            stagingArea.unstageForAddition(fileName);
         }
-        File stagedForRemovalFile = stagingArea.getFileForRemoval(fileName);
-        if (stagedForRemovalFile != null) {
-            stagedForRemovalFile.delete();
-        }
+
+        stagingArea.unstageForRemoval(fileName);
     }
 
     /**

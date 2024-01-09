@@ -71,7 +71,7 @@ public class StagingArea {
 
     public boolean unstageForRemoval(String fileName) {
         File file = getFileForRemoval(fileName);
-        if (!file.exists()) return false;
+        if (file == null) return false;
         return file.delete();
     }
 
