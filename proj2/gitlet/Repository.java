@@ -3,7 +3,6 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static gitlet.Utils.*;
 
@@ -75,14 +74,13 @@ public class Repository {
             exitWithMessage("File does not exist.");
         }
         String workingFileContents = readContentsAsString(workingFile);
-        File stagedFile = stagingArea.stageFileForAddition(workingFile);
+        File stagedFile = stagingArea.stageForAddition(workingFile);
         Commit currentCommit = getCurrentCommit();
         String committedFileHash = currentCommit.getTrackedFiles().get(fileName);
         if (sha1(workingFileContents).equals(committedFileHash)) {
             if (stagedFile != null) stagedFile.delete();
             return;
         }
-        writeContents(stagedFile, workingFileContents);
         File stagedForRemovalFile = stagingArea.getFileForRemoval(fileName);
         if (stagedForRemovalFile != null) {
             stagedForRemovalFile.delete();
@@ -167,7 +165,7 @@ public class Repository {
         }
         if (trackedFiles.containsKey(filename)) {
             File trackedFile = blobStore.get(trackedFiles.get(filename));
-            stagingArea.stageFileForRemoval(trackedFile, filename);
+            stagingArea.stageForRemoval(trackedFile, filename);
             File workingFile = join(CWD, filename);
             if (workingFile.exists()) workingFile.delete();
         }

@@ -16,12 +16,12 @@ public class StagingArea {
         REMOVAL_DIR = removalDirectory;
     }
 
-    public File stageFileForAddition(File file) {
-        return stageFileForAddition(file, file.getName());
+    public File stageForAddition(File file) {
+        return stageForAddition(file, file.getName());
     }
 
     /** Useful when adding a blob to the staging area */
-    public File stageFileForAddition(File file, String newName) {
+    public File stageForAddition(File file, String newName) {
         File stagedFile = join(ADDITION_DIR, newName);
         writeContents(stagedFile, readContentsAsString(file));
         return stagedFile;
@@ -32,12 +32,12 @@ public class StagingArea {
         return (file.exists()) ? file : null;
     }
 
-    public File stageFileForRemoval(File file) {
-        return stageFileForRemoval(file, file.getName());
+    public File stageForRemoval(File file) {
+        return stageForRemoval(file, file.getName());
     }
 
     /** Useful when adding a blob to the staging area */
-    public File stageFileForRemoval(File file, String newName) {
+    public File stageForRemoval(File file, String newName) {
         File stagedFile = join(REMOVAL_DIR, newName);
         writeContents(stagedFile, readContentsAsString(file));
         return stagedFile;
