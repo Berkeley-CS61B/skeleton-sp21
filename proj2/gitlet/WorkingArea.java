@@ -37,4 +37,11 @@ public class WorkingArea {
                 .map(fileName -> join(WORKING_DIR, fileName))
                 .collect(Collectors.toList());
     }
+
+    public void clear() {
+        allFiles()
+                .stream()
+                .map(File::getName)
+                .forEach(this::deleteFile);
+    }
 }

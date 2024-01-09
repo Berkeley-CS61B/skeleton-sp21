@@ -318,7 +318,7 @@ public class Repository {
 
         File blob = blobStore.get(blobHash);
         String blobContents = readContentsAsString(blob);
-        writeContents(join(CWD, fileName), blobContents);
+        workingArea.saveFile(blobContents, fileName);
     }
 
     /**
@@ -329,12 +329,34 @@ public class Repository {
     }
 
     /**
+     * Reset the current working to a given commit
+     * If a working file is untracked in the current branch and would be overwritten by the checkout,
+     *      print `There is an untracked file in the way; delete it, or add and commit it first.`
+     * Clears the staging area
+     */
+    private static void checkoutCommit(Commit commit) {
+        Map<String, String> trackedFiles = commit.getTrackedFiles();
+        if (workingArea.allFiles()
+                .stream()
+                .map(File::getName)
+                .anyMatch(fileName -> !trackedFiles.containsKey(fileName))
+        ) {
+            exitWithMessage("There is an untracked file in the way; delete it, or add and commit it first.");
+        }
+
+        workingArea.clear();
+        stagingArea.clear();
+
+        trackedFiles.keySet().forEach(fileName -> checkoutFile(commit.getHash(), fileName));
+
+        setCurrentCommit(commit);
+    }
+
+    /**
      * Takes all files in the commit at the head of the given branch, and puts them in the working directory,
      *      overwriting the versions of the files that are already there if they exist
      * If that branch is the current branch, print `No need to checkout the current branch.`
      * If no branch with that name exists, print `No such branch exists.`
-     * If a working file is untracked in the current branch and would be overwritten by the checkout,
-     *      print `There is an untracked file in the way; delete it, or add and commit it first.`
      * Any files that are tracked in the current branch but are not present in the checked-out branch are deleted
      * The staging area is cleared, unless the checked-out branch is the current branch
      * Given branch will now be considered the current branch (HEAD)
@@ -350,27 +372,8 @@ public class Repository {
             exitWithMessage("No such branch exists.");
         }
 
-        Commit currentCommit = getCurrentCommit();
-        List<String> workingFiles = plainFilenamesIn(CWD);
-        if (workingFiles
-                .stream()
-                .anyMatch(file -> !currentCommit.getTrackedFiles().containsKey(file))
-        ) {
-            exitWithMessage("There is an untracked file in the way; delete it, or add and commit it first.");
-        }
-
-        for (String file: workingFiles) {
-            join(CWD, file).delete();
-        }
-
-        stagingArea.getFiles().forEach(File::delete);
-
         Commit targetCommit = commitStore.getCommitByHash(targetBranch.getCommitHash());
-        for (Map.Entry<String, String> entry: targetCommit.getTrackedFiles().entrySet()) {
-            File workingFile = join(CWD, entry.getKey());
-            String contents = readContentsAsString(blobStore.get(entry.getValue()));
-            writeContents(workingFile, contents);
-        }
+        checkoutCommit(targetCommit);
 
         setCurrentBranch(targetBranch);
     }
@@ -416,32 +419,7 @@ public class Repository {
      */
     public static void reset(String commitHash) {
         Commit targetCommit = commitStore.getCommitByHash(commitHash);
-        if (targetCommit == null) {
-            exitWithMessage("No targetCommit with that id exists.");
-        }
-
-        List<String> workingFiles = plainFilenamesIn(CWD);
-        if (workingFiles
-                .stream()
-                .anyMatch(file -> !targetCommit.getTrackedFiles().containsKey(file))
-        ) {
-            exitWithMessage("There is an untracked file in the way; delete it, or add and commit it first.");
-        }
-
-        workingFiles
-                .stream()
-                .map(fileName -> join(CWD, fileName))
-                .forEach(File::delete);
-
-        stagingArea.getFiles().forEach(File::delete);
-
-        for (Map.Entry<String, String> entry: targetCommit.getTrackedFiles().entrySet()) {
-            File workingFile = join(CWD, entry.getKey());
-            String contents = readContentsAsString(blobStore.get(entry.getValue()));
-            writeContents(workingFile, contents);
-        }
-
-        setCurrentCommit(targetCommit.getHash());
+        checkoutCommit(targetCommit);
     }
 
     private static Commit getCurrentCommit() {
@@ -449,9 +427,9 @@ public class Repository {
         return commitStore.getCommitByHash(commitHash);
     }
 
-    private static void setCurrentCommit(String commitHash) {
+    private static void setCurrentCommit(Commit commit) {
         Branch currentBranch = getCurrentBranch();
-        currentBranch.setCommit(commitHash);
+        currentBranch.setCommit(commit);
         branchStore.saveBranch(currentBranch);
     }
 
