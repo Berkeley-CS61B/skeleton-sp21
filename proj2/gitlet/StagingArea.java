@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static gitlet.Utils.*;
 
@@ -75,9 +76,15 @@ public class StagingArea {
     }
 
     public List<File> getFiles() {
-        List<File> addedFiles = getFilesForAddition();
-        addedFiles.addAll(getFilesForRemoval());
-        return addedFiles;
+        return Stream
+                .concat(
+                        getFilesForAddition().stream(),
+                        getFilesForRemoval().stream())
+                .collect(Collectors.toList());
+    }
+
+    public void clear() {
+        getFiles().forEach(File::delete);
     }
 
     public boolean contains(String fileName) {
