@@ -165,7 +165,7 @@ public class Repository {
         }
         if (trackedFiles.containsKey(filename)) {
             File trackedFile = blobStore.get(trackedFiles.get(filename));
-            stagingArea.stageForRemoval(trackedFile, filename);
+            stagingArea.stageForRemoval(readContentsAsString(trackedFile), filename);
             File workingFile = join(CWD, filename);
             if (workingFile.exists()) workingFile.delete();
         }

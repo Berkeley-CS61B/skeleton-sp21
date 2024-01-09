@@ -17,34 +17,18 @@ public class StagingArea {
     }
 
     public File stageForAddition(File file) {
-        return stageForAddition(file, file.getName());
+        return stageForAddition(readContentsAsString(file), file.getName());
     }
 
     /** Useful when adding a blob to the staging area */
-    public File stageForAddition(File file, String newName) {
-        File stagedFile = join(ADDITION_DIR, newName);
-        writeContents(stagedFile, readContentsAsString(file));
+    public File stageForAddition(String contents, String fileName) {
+        File stagedFile = join(ADDITION_DIR, fileName);
+        writeContents(stagedFile, contents);
         return stagedFile;
     }
 
     public File getFileForAddition(String fileName) {
         File file = join(ADDITION_DIR, fileName);
-        return (file.exists()) ? file : null;
-    }
-
-    public File stageForRemoval(File file) {
-        return stageForRemoval(file, file.getName());
-    }
-
-    /** Useful when adding a blob to the staging area */
-    public File stageForRemoval(File file, String newName) {
-        File stagedFile = join(REMOVAL_DIR, newName);
-        writeContents(stagedFile, readContentsAsString(file));
-        return stagedFile;
-    }
-
-    public File getFileForRemoval(String fileName) {
-        File file = join(REMOVAL_DIR, fileName);
         return (file.exists()) ? file : null;
     }
 
@@ -55,11 +39,39 @@ public class StagingArea {
                 .collect(Collectors.toList());
     }
 
+    public boolean unstageForAddition(String fileName) {
+        File file = getFileForAddition(fileName);
+        if (!file.exists()) return false;
+        return file.delete();
+    }
+
+    public File stageForRemoval(File file) {
+        return stageForRemoval(readContentsAsString(file), file.getName());
+    }
+
+    /** Useful when adding a blob to the staging area */
+    public File stageForRemoval(String contents, String newName) {
+        File stagedFile = join(REMOVAL_DIR, newName);
+        writeContents(stagedFile, contents);
+        return stagedFile;
+    }
+
+    public File getFileForRemoval(String fileName) {
+        File file = join(REMOVAL_DIR, fileName);
+        return (file.exists()) ? file : null;
+    }
+
     public List<File> getFilesForRemoval() {
         return Objects.requireNonNull(plainFilenamesIn(REMOVAL_DIR))
                 .stream()
                 .map(fileName -> join(REMOVAL_DIR, fileName))
                 .collect(Collectors.toList());
+    }
+
+    public boolean unstageForRemoval(String fileName) {
+        File file = getFileForRemoval(fileName);
+        if (!file.exists()) return false;
+        return file.delete();
     }
 
     public List<File> getFiles() {
