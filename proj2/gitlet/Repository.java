@@ -87,22 +87,21 @@ public class Repository {
     }
 
     /**
-     * If the commit message is empty, print the error message `Please enter a commit message.`
-     * If no files have been staged, print the message `No changes added to the commit.`
+     * If the commit message is empty, print `Please enter a commit message.`
+     * If no files have been staged, print `No changes added to the commit.`
      * For each added/modified files in the staging area,
      *      - Compute its SHA-1 hash as a function of its contents
-     *      - Copy it to BLOBS_DIR and set its name to its hash value
+     *      - Copy it to the blobs directory and set its to its SHA-1 hash
      * Build the commit:
      *      - Set the commit message
      *      - Set the timestamp to now
      *      - Reuse all tracked files from the parent commit
      *      - Rewire the references of the added/modified files
-     *      - Untrack removed files (i.e, files in REMOVAL_DIR)
+     *      - Untrack removed files
      *      - Point to the parent commit
-     * Save the commit on disk in COMMITS_DIR
+     * Save the commit on disk in the commits directory
      * Update the pointer of the current branch to point to the new commit
-     * Clear the staging area (i.e, remove all files in ADDITION_DIR and REMOVAL_DIR)
-     *
+     * Clear the staging area
      */
     public static void commit(String message) {
         if (message.isEmpty()) {
@@ -113,37 +112,31 @@ public class Repository {
             exitWithMessage("No changes added to the commit.");
         }
 
-        List<File> addedFiles = stagingArea.getFilesForAddition();
-        List<File> removedFiles = stagingArea.getFilesForRemoval();
-
         /* Compute the SHA-1 hash of added/modified files and store them in the blobs directory */
         Map<String, String> nameToBlob = new TreeMap<>();
-        addedFiles.forEach(file -> {
+        stagingArea.getFilesForAddition().forEach(file -> {
             File storedBlob = blobStore.save(file);
             nameToBlob.put(file.getName(), storedBlob.getName());
         });
 
         /* update the tracked list of files */
-        Commit currentCommit = getCurrentCommit();
-        Map<String, String> trackedFiles = currentCommit.getTrackedFiles();
+        Map<String, String> trackedFiles = getCurrentCommit().getTrackedFiles();
         trackedFiles.putAll(nameToBlob);
-        removedFiles.forEach(file -> trackedFiles.remove(file.getName()));
+        stagingArea.getFilesForRemoval().forEach(file -> trackedFiles.remove(file.getName()));
 
         /* Build and save the commit */
         Commit newCommit = new Commit.Builder(message)
-                .parent(currentCommit.getHash())
+                .parent(getCurrentCommit().getHash())
                 .trackedFiles(trackedFiles)
                 .build();
         commitStore.saveCommit(newCommit);
 
-        /* Update the pointer of the current branch to point to the newly-created commit */
+        /* Make the current branch point to the newly-created commit */
         Branch branch = getCurrentBranch();
         branch.setHead(newCommit.getHash());
         branchStore.saveBranch(branch);
 
-        /* Clear the staging area */
-        addedFiles.forEach(File::delete);
-        removedFiles.forEach(File::delete);
+        stagingArea.clear();
     }
 
     /**
