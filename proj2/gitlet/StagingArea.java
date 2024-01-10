@@ -42,7 +42,7 @@ public class StagingArea {
 
     public boolean unstageForAddition(String fileName) {
         File file = getFileForAddition(fileName);
-        if (!file.exists()) return false;
+        if (file == null) return false;
         return file.delete();
     }
 
