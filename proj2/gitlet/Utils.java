@@ -64,14 +64,6 @@ class Utils {
         return sha1(vals.toArray(new Object[vals.size()]));
     }
 
-    /* SET OPERATIONS */
-    @SafeVarargs
-    static <T> Set<T> union(Set<T>... sets) {
-        Set<T> result = sets[0];
-        for (int i = 1; i < sets.length; i++) result.addAll(sets[i]);
-        return result;
-    }
-
     /* FILE DELETION */
 
     /** Deletes FILE if it exists and is not a directory.  Returns true

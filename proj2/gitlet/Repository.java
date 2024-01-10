@@ -432,11 +432,10 @@ public class Repository {
             exitWithMessage("Current branch fast-forwarded.");
         }
 
-        Set<String> filePool = union(
-                SPLIT_COMMIT.getTrackedFiles().keySet(),
-                HEAD_COMMIT.getTrackedFiles().keySet(),
-                OTHER_COMMIT.getTrackedFiles().keySet()
-        );
+        Set<String> filePool = new HashSet<>();
+        filePool.addAll(SPLIT_COMMIT.getTrackedFiles().keySet());
+        filePool.addAll(HEAD_COMMIT.getTrackedFiles().keySet());
+        filePool.addAll(OTHER_COMMIT.getTrackedFiles().keySet());
 
         AtomicBoolean isConflict = new AtomicBoolean(false);
         filePool.forEach(fileName -> {
