@@ -280,11 +280,10 @@ public class Repository {
      *      print `There is an untracked file in the way; delete it, or add and commit it first.`
      * Clears the staging area
      */
-    private static void checkoutCommit(Commit commit) {
-        Map<String, String> trackedFiles = commit.getTrackedFiles();
+    private static void checkoutCommit(Commit targetCommit) {
         if (workingArea.allFiles().stream()
                 .map(File::getName)
-                .anyMatch(fileName -> !trackedFiles.containsKey(fileName))
+                .anyMatch(fileName -> !getCurrentCommit().getTrackedFiles().containsKey(fileName))
         ) {
             exitWithMessage("There is an untracked file in the way; delete it, or add and commit it first.");
         }
@@ -292,9 +291,9 @@ public class Repository {
         workingArea.clear();
         stagingArea.clear();
 
-        trackedFiles.keySet().forEach(fileName -> checkoutFile(commit.getHash(), fileName));
+        targetCommit.getTrackedFiles().keySet().forEach(fileName -> checkoutFile(targetCommit.getHash(), fileName));
 
-        setCurrentCommit(commit);
+        setCurrentCommit(targetCommit);
     }
 
     /**
@@ -360,10 +359,13 @@ public class Repository {
      *      print `There is an untracked file in the way; delete it, or add and commit it first.`
      * Remove tracked files that are not present in that commit
      * Clear the staging area
-     * Move the current branch’s head to that commit node
+     * Move the current branch’s head to that commit
      */
     public static void reset(String commitHash) {
         Commit targetCommit = commitStore.getCommitByHash(commitHash);
+        if (targetCommit == null) {
+            exitWithMessage("No commit with that id exists.");
+        }
         checkoutCommit(targetCommit);
     }
 
