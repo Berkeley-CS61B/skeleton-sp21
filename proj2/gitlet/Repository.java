@@ -463,7 +463,7 @@ public class Repository {
                                 readContentsAsString(blobStore.get(HEAD)) +
                                 "=======\n" +
                                 readContentsAsString(blobStore.get(OTHER)) +
-                                ">>>>>>>";
+                                ">>>>>>>\n";
                         workingArea.saveFile(contents, fileName);
                         stagingArea.stageForAddition(contents, fileName);
                         isConflict.set(true);
