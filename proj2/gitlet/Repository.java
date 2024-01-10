@@ -459,9 +459,9 @@ public class Repository {
                         /* do nothing */
                     } else {
                         /* conflict */
-                        String contents = "<<<<<<< HEAD" +
+                        String contents = "<<<<<<< HEAD\n" +
                                 readContentsAsString(blobStore.get(HEAD)) +
-                                "=======" +
+                                "=======\n" +
                                 readContentsAsString(blobStore.get(OTHER)) +
                                 ">>>>>>>";
                         workingArea.saveFile(contents, fileName);
