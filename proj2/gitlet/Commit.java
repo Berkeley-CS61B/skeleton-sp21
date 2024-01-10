@@ -106,18 +106,6 @@ public class Commit implements Serializable, Dumpable {
         writeObject(commitFile, this);
     }
 
-    @Override
-    public String toString() {
-        return "Commit{" +
-                "timestamp=" + timestamp +
-                ", message='" + message + '\'' +
-                ", parent='" + parent + '\'' +
-                ", secondaryParent='" + secondaryParent + '\'' +
-                ", trackedFiles=" + trackedFiles +
-                ", hash='" + hash + '\'' +
-                '}';
-    }
-
     public String log() {
         StringBuilder builder = new StringBuilder();
         builder.append("===\n");
@@ -132,6 +120,26 @@ public class Commit implements Serializable, Dumpable {
         builder.append(String.format("%s\n", formattedDate));
         builder.append(String.format("%s\n\n", getMessage()));
         return builder.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Commit) {
+            return ((Commit) obj).getHash().equals(this.getHash());
+        }
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return "Commit{" +
+                "timestamp=" + timestamp +
+                ", message='" + message + '\'' +
+                ", parent='" + parent + '\'' +
+                ", secondaryParent='" + secondaryParent + '\'' +
+                ", trackedFiles=" + trackedFiles +
+                ", hash='" + hash + '\'' +
+                '}';
     }
 
     @Override

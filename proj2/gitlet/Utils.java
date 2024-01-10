@@ -17,6 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
+import java.util.Set;
 
 
 /** Assorted utilities.
@@ -61,6 +62,14 @@ class Utils {
      *  VALS. */
     static String sha1(List<Object> vals) {
         return sha1(vals.toArray(new Object[vals.size()]));
+    }
+
+    /* SET OPERATIONS */
+    @SafeVarargs
+    static <T> Set<T> union(Set<T>... sets) {
+        Set<T> result = sets[0];
+        for (int i = 1; i < sets.length; i++) result.addAll(sets[i]);
+        return result;
     }
 
     /* FILE DELETION */

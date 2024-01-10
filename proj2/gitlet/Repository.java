@@ -3,6 +3,8 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static gitlet.Utils.*;
 
@@ -102,6 +104,10 @@ public class Repository {
      * Clear the staging area
      */
     public static void commit(String message) {
+        commit(message, null);
+    }
+
+    private static void commit(String message, String secondaryParent) {
         if (message.isEmpty()) {
             exitWithMessage("Please enter a commit message.");
         }
@@ -124,6 +130,7 @@ public class Repository {
 
         Commit newCommit = new Commit.Builder(message)
                 .parent(getCurrentCommit().getHash())
+                .secondaryParent(secondaryParent)
                 .trackedFiles(trackedFiles)
                 .build();
         commitStore.saveCommit(newCommit);
@@ -164,11 +171,9 @@ public class Repository {
      * More info in Commit::log()
      */
     public static void log() {
-        Commit currentCommit = getCurrentCommit();
-        while (currentCommit != null) {
-            System.out.print(currentCommit.log());
-            currentCommit = commitStore.getCommitByHash(currentCommit.getParent());
-        }
+        getCommitChain(getCurrentCommit()).stream()
+                .map(Commit::log)
+                .forEach(System.out::print);
     }
 
     /**
@@ -191,8 +196,7 @@ public class Repository {
         if (matchedCommits.isEmpty()) {
             exitWithMessage("Found no commit with that message.");
         }
-        matchedCommits
-                .stream()
+        matchedCommits.stream()
                 .map(Commit::getHash)
                 .forEach(System.out::println);
     }
@@ -278,8 +282,7 @@ public class Repository {
      */
     private static void checkoutCommit(Commit commit) {
         Map<String, String> trackedFiles = commit.getTrackedFiles();
-        if (workingArea.allFiles()
-                .stream()
+        if (workingArea.allFiles().stream()
                 .map(File::getName)
                 .anyMatch(fileName -> !trackedFiles.containsKey(fileName))
         ) {
@@ -364,9 +367,165 @@ public class Repository {
         checkoutCommit(targetCommit);
     }
 
+    /**
+     * Merges files from the given branch into the current branch.
+     * If the staging area is not empty, print `You have uncommitted changes.`
+     * If a branch with the given name does not exist, print `A branch with that name does not exist.`
+     * If curren branch == given branch, print `Cannot merge a branch with itself.`
+     * If the split point is the same commit as the given branch,
+     *      - do nothing
+     *      - print `Given branch is an ancestor of the current branch.`
+     *      - merge is complete
+     * If the split point is the current branch,
+     *      - check out the given branch,
+     *      - print `Current branch fast-forwarded.`
+     *      - merge is complete
+     * Merging rules (denoting the current branch as HEAD, the given branch as OTHER, and the split commit as SPLIT):
+     *      1. If the file is modified in OTHER but not HEAD, use the version in OTHER
+     *      2. If the file is modified in HEAD but not OTHER, use the version in HEAD
+     *      3. If the file is modified in OTHER and HEAD,
+     *          3.a. if HEAD and OTHER are modified in the same way, do nothing
+     *          3.b. if HEAD and OTHER are modified in different ways, conflict
+     *      4. If the file is not in SPLIT nor OTHER but in HEAD, use the version in HEAD
+     *      5. If the file is not in SPLIT nor HEAD but in OTHER, use the version in OTHER
+     *      6. If the file is unmodified in HEAD but not present in OTHER, remove
+     *      7. If the file is unmodified in OTHER but not present in HEAD, remain removed
+     * Whenever the resulting file of the merge is different from its version in HEAD,
+     *      add it to the staging area
+     * When a conflict occurs, fill the conflicted file with the following:
+     * ```
+     * <<<<<<< HEAD
+     * contents of file in current branch
+     * =======
+     * contents of file in given branch
+     * >>>>>>>
+     * ```
+     * Once files have been updated according to the above rules,
+     *      - commit with the message: `Merged [given branch name] into [current branch name].`
+     *      - if the merge encountered a conflict, print the message `Encountered a merge conflict.`
+     */
+    public static void merge(String branchName) {
+        if (!stagingArea.isEmpty()) {
+            exitWithMessage("You have uncommitted changes.");
+        }
+
+        Branch targetBranch = branchStore.getBranch(branchName);
+        if (targetBranch == null) {
+            exitWithMessage("A branch with that name does not exist.");
+        }
+
+        Branch currentBranch = getCurrentBranch();
+        if (targetBranch.getName().equals(currentBranch.getName())) {
+            exitWithMessage("Cannot merge a branch with itself.");
+        }
+
+        final Commit HEAD_COMMIT = commitStore.getCommitByHash(currentBranch.getCommitHash());
+        final Commit OTHER_COMMIT = commitStore.getCommitByHash(targetBranch.getCommitHash());
+        final Commit SPLIT_COMMIT = splitPoint(currentBranch, targetBranch);
+
+        if (SPLIT_COMMIT.equals(OTHER_COMMIT)) {
+            exitWithMessage("Given branch is an ancestor of the current branch.");
+        }
+
+        if (SPLIT_COMMIT.equals(HEAD_COMMIT)) {
+            checkoutBranch(targetBranch.getName());
+            exitWithMessage("Current branch fast-forwarded.");
+        }
+
+        Set<String> filePool = union(
+                SPLIT_COMMIT.getTrackedFiles().keySet(),
+                HEAD_COMMIT.getTrackedFiles().keySet(),
+                OTHER_COMMIT.getTrackedFiles().keySet()
+        );
+
+        AtomicBoolean isConflict = new AtomicBoolean(false);
+        filePool.forEach(fileName -> {
+            final String SPLIT = SPLIT_COMMIT.getTrackedFiles().get(fileName);
+            final String HEAD = HEAD_COMMIT.getTrackedFiles().get(fileName);
+            final String OTHER = OTHER_COMMIT.getTrackedFiles().get(fileName);
+
+            if (SPLIT != null && HEAD != null && OTHER != null) {
+                if (!SPLIT.equals(OTHER) && SPLIT.equals(HEAD)) {
+                    String contents = readContentsAsString(blobStore.get(OTHER));
+                    workingArea.saveFile(contents, fileName);
+                    stagingArea.stageForAddition(readContentsAsString(blobStore.get(OTHER)), fileName);
+                }
+
+                if (!SPLIT.equals(HEAD) && SPLIT.equals(OTHER)) {
+                    workingArea.saveFile(readContentsAsString(blobStore.get(HEAD)), fileName);
+                }
+
+                if (!SPLIT.equals(HEAD) && !SPLIT.equals(OTHER)) {
+                    if (HEAD.equals(OTHER)) {
+                        /* do nothing */
+                    } else {
+                        /* conflict */
+                        String contents = "<<<<<<< HEAD" +
+                                readContentsAsString(blobStore.get(HEAD)) +
+                                "=======" +
+                                readContentsAsString(blobStore.get(OTHER)) +
+                                ">>>>>>>";
+                        workingArea.saveFile(contents, fileName);
+                        stagingArea.stageForAddition(contents, fileName);
+                        isConflict.set(true);
+                    }
+                }
+            }
+
+            if (SPLIT == null && OTHER == null && HEAD != null) {
+                workingArea.saveFile(readContentsAsString(blobStore.get(HEAD)), fileName);
+            }
+
+            if (SPLIT == null && HEAD == null && OTHER != null) {
+                String contents = readContentsAsString(blobStore.get(OTHER));
+                workingArea.saveFile(contents, fileName);
+                stagingArea.stageForAddition(readContentsAsString(blobStore.get(OTHER)), fileName);
+            }
+
+            if (SPLIT != null && SPLIT.equals(HEAD) && OTHER == null) {
+                stagingArea.stageForRemoval(workingArea.getFile(fileName));
+                workingArea.deleteFile(fileName);
+            }
+
+            if (SPLIT != null && SPLIT.equals(OTHER) && HEAD == null) {
+                /* leave the file removed */
+            }
+        });
+
+        String commitMessage = String.format(
+                "Merged %s into %s.",
+                targetBranch.getName(),
+                currentBranch.getName());
+        commit(commitMessage, OTHER_COMMIT.getHash());
+
+        if (isConflict.get()) {
+            System.out.println("Encountered a merge conflict.");
+        }
+    }
+
+    private static Commit splitPoint(Branch a, Branch b) {
+        Commit A = commitStore.getCommitByHash(a.getCommitHash());
+        Commit B = commitStore.getCommitByHash(b.getCommitHash());
+        Set<String> set = getCommitChain(A).stream().map(Commit::getHash).collect(Collectors.toSet());
+        return getCommitChain(B).stream()
+                .filter(commit -> set.contains(commit.getHash()))
+                .findFirst()
+                .orElse(null);
+    }
+
     private static Commit getCurrentCommit() {
         String commitHash = getCurrentBranch().getCommitHash();
         return commitStore.getCommitByHash(commitHash);
+    }
+
+    private static List<Commit> getCommitChain(Commit startingCommit) {
+        List<Commit> commits = new ArrayList<>();
+        Commit currentCommit = startingCommit;
+        while (currentCommit != null) {
+            commits.add(currentCommit);
+            currentCommit = commitStore.getCommitByHash(currentCommit.getParent());
+        }
+        return commits;
     }
 
     private static void setCurrentCommit(Commit commit) {

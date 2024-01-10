@@ -94,6 +94,11 @@ public class Main {
                     commitHash = args[1];
                     Repository.reset(commitHash);
                     break;
+                case "merge":
+                    validateNumArgs(args, 2);
+                    branchName = args[1];
+                    Repository.merge(branchName);
+                    break;
                 default:
                     exitWithMessage("No command with that name exists.");
             }
