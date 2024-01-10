@@ -292,8 +292,6 @@ public class Repository {
         stagingArea.clear();
 
         targetCommit.getTrackedFiles().keySet().forEach(fileName -> checkoutFile(targetCommit.getHash(), fileName));
-
-        setCurrentCommit(targetCommit);
     }
 
     /**
@@ -528,12 +526,6 @@ public class Repository {
             currentCommit = commitStore.getCommitByHash(currentCommit.getParent());
         }
         return commits;
-    }
-
-    private static void setCurrentCommit(Commit commit) {
-        Branch currentBranch = getCurrentBranch();
-        currentBranch.setCommit(commit);
-        branchStore.saveBranch(currentBranch);
     }
 
     private static Branch getCurrentBranch() {
