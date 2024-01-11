@@ -443,32 +443,30 @@ public class Repository {
             final String HEAD = HEAD_COMMIT.getTrackedFiles().get(fileName);
             final String OTHER = OTHER_COMMIT.getTrackedFiles().get(fileName);
 
-            if (SPLIT != null && HEAD != null && OTHER != null) {
-                if (!SPLIT.equals(OTHER) && SPLIT.equals(HEAD)) {
-                    String contents = readContentsAsString(blobStore.get(OTHER));
-                    workingArea.saveFile(contents, fileName);
-                    stagingArea.stageForAddition(readContentsAsString(blobStore.get(OTHER)), fileName);
-                }
+            if (SPLIT != null && OTHER != null && !SPLIT.equals(OTHER) && SPLIT.equals(HEAD)) {
+                String contents = readContentsAsString(blobStore.get(OTHER));
+                workingArea.saveFile(contents, fileName);
+                stagingArea.stageForAddition(readContentsAsString(blobStore.get(OTHER)), fileName);
+            }
 
-                if (!SPLIT.equals(HEAD) && SPLIT.equals(OTHER)) {
-                    workingArea.saveFile(readContentsAsString(blobStore.get(HEAD)), fileName);
-                }
+            if (SPLIT != null && HEAD != null && !SPLIT.equals(HEAD) && SPLIT.equals(OTHER)) {
+                workingArea.saveFile(readContentsAsString(blobStore.get(HEAD)), fileName);
+            }
 
-                if (!SPLIT.equals(HEAD) && !SPLIT.equals(OTHER)) {
-                    if (HEAD.equals(OTHER)) {
-                        /* do nothing */
-                    } else {
-                        /* conflict */
-                        String contents = "<<<<<<< HEAD\n" +
-                                readContentsAsString(blobStore.get(HEAD)) +
-                                "=======\n" +
-                                readContentsAsString(blobStore.get(OTHER)) +
-                                ">>>>>>>\n";
-                        workingArea.saveFile(contents, fileName);
-                        stagingArea.stageForAddition(contents, fileName);
-                        isConflict.set(true);
-                    }
-                }
+            if (
+                    !Objects.equals(SPLIT, HEAD) && !Objects.equals(SPLIT, OTHER) && !Objects.equals(HEAD, OTHER)
+            ) {
+                /* conflict */
+                String headContents = (HEAD != null ? readContentsAsString(blobStore.get(HEAD)) : "");
+                String otherContents = (OTHER != null ? readContentsAsString(blobStore.get(OTHER)) : "");
+                String contents = "<<<<<<< HEAD\n" +
+                        headContents +
+                        "=======\n" +
+                        otherContents +
+                        ">>>>>>>\n";
+                workingArea.saveFile(contents, fileName);
+                stagingArea.stageForAddition(contents, fileName);
+                isConflict.set(true);
             }
 
             if (SPLIT == null && OTHER == null && HEAD != null) {
