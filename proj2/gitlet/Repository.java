@@ -72,6 +72,7 @@ public class Repository {
      * If the file was staged for removal, it will no longer be after executing the command
      */
     public static void add(String fileName) {
+        checkInitializedGitletDirectory();
         File workingFile = workingArea.getFile(fileName);
         if (workingFile == null) {
             exitWithMessage("File does not exist.");
@@ -104,6 +105,7 @@ public class Repository {
      * Clear the staging area
      */
     public static void commit(String message) {
+        checkInitializedGitletDirectory();
         commit(message, null);
     }
 
@@ -150,6 +152,7 @@ public class Repository {
      *      - remove it from the working directory if the user has not already done so
      */
     public static void rm(String filename) {
+        checkInitializedGitletDirectory();
         File stagedForAdditionFile = stagingArea.getFileForAddition(filename);
         Map<String, String> trackedFiles = getCurrentCommit().getTrackedFiles();
         if (stagedForAdditionFile == null && !trackedFiles.containsKey(filename)) {
@@ -171,6 +174,7 @@ public class Repository {
      * More info in Commit::log()
      */
     public static void log() {
+        checkInitializedGitletDirectory();
         getCommitChain(getCurrentCommit()).stream()
                 .map(Commit::log)
                 .forEach(System.out::print);
@@ -181,6 +185,7 @@ public class Repository {
      * The order of the commits does not matter
      */
     public static void globalLog() {
+        checkInitializedGitletDirectory();
         commitStore
                 .allCommitsStream()
                 .map(Commit::log)
@@ -192,6 +197,7 @@ public class Repository {
      * If no such commit exists, print `Found no commit with that message.`
      */
     public static void find(String commitMessage) {
+        checkInitializedGitletDirectory();
         List<Commit> matchedCommits = commitStore.getCommitsByMessage(commitMessage);
         if (matchedCommits.isEmpty()) {
             exitWithMessage("Found no commit with that message.");
@@ -214,6 +220,7 @@ public class Repository {
      *      - This includes files that have been staged for removal, but then re-created without Gitlet’s knowledge
      */
     public static void status() {
+        checkInitializedGitletDirectory();
         System.out.println("=== Branches ===");
         List<Branch> branches = branchStore.allBranches();
         Branch currentBranch = getCurrentBranch();
@@ -252,6 +259,7 @@ public class Repository {
      * The new version of the file is not staged.
      */
     public static void checkoutFile(String commitHash, String fileName) {
+        checkInitializedGitletDirectory();
         Commit commit = commitStore.getCommitByHash(commitHash);
         if (commit == null) {
             exitWithMessage("No commit with that id exists.");
@@ -271,6 +279,7 @@ public class Repository {
      * same as checkoutFile(String commitHash, String fileName) except that commitHash is the current commit hash
      */
     public static void checkoutFile(String fileName) {
+        checkInitializedGitletDirectory();
         checkoutFile(getCurrentCommit().getHash(), fileName);
     }
 
@@ -305,6 +314,7 @@ public class Repository {
      * Given branch will now be considered the current branch (HEAD)
      */
     public static void checkoutBranch(String targetBranchName) {
+        checkInitializedGitletDirectory();
         Branch currentBranch = getCurrentBranch();
         if (targetBranchName.equals(currentBranch.getName())) {
             exitWithMessage("No need to checkout the current branch.");
@@ -327,6 +337,7 @@ public class Repository {
      * If a branch with the given name already exists, print the error message `A branch with that name already exists`
      */
     public static void branch(String branchName) {
+        checkInitializedGitletDirectory();
         if (branchStore.getBranch(branchName) != null) {
             exitWithMessage("A branch with that name already exists");
         }
@@ -340,6 +351,7 @@ public class Repository {
      * If applied to the branch we are currently in, print `Cannot remove the current branch.`
      */
     public static void rmBranch(String branchName) {
+        checkInitializedGitletDirectory();
         if (getCurrentBranch().getName().equals(branchName)) {
             exitWithMessage("Cannot remove the current branch.");
         }
@@ -361,6 +373,7 @@ public class Repository {
      * Move the current branch’s head to that commit
      */
     public static void reset(String commitHash) {
+        checkInitializedGitletDirectory();
         Commit targetCommit = commitStore.getCommitByHash(commitHash);
         if (targetCommit == null) {
             exitWithMessage("No commit with that id exists.");
@@ -412,6 +425,7 @@ public class Repository {
      *      - if the merge encountered a conflict, print the message `Encountered a merge conflict.`
      */
     public static void merge(String branchName) {
+        checkInitializedGitletDirectory();
         if (!stagingArea.isEmpty()) {
             exitWithMessage("You have uncommitted changes.");
         }
@@ -566,5 +580,11 @@ public class Repository {
 
     private static void setCurrentBranch(Branch branch) {
         head.set(branch);
+    }
+
+    private static void checkInitializedGitletDirectory() {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
     }
 }
