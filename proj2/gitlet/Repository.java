@@ -369,6 +369,8 @@ public class Repository {
 
     /**
      * Merges files from the given branch into the current branch.
+     * If an untracked file in the current commit would be overwritten or deleted by the merge,
+     *      print `There is an untracked file in the way; delete it, or add and commit it first.`
      * If the staging area is not empty, print `You have uncommitted changes.`
      * If a branch with the given name does not exist, print `A branch with that name does not exist.`
      * If curren branch == given branch, print `Cannot merge a branch with itself.`
@@ -405,6 +407,12 @@ public class Repository {
      *      - if the merge encountered a conflict, print the message `Encountered a merge conflict.`
      */
     public static void merge(String branchName) {
+        if (workingArea.allFiles().stream()
+                .anyMatch(file -> !getCurrentCommit().getTrackedFiles().containsKey(file.getName()))
+        ) {
+            exitWithMessage("There is an untracked file in the way; delete it, or add and commit it first.");
+        }
+
         if (!stagingArea.isEmpty()) {
             exitWithMessage("You have uncommitted changes.");
         }
