@@ -283,7 +283,8 @@ public class Repository {
     private static void checkoutCommit(Commit targetCommit) {
         if (workingArea.allFiles().stream()
                 .map(File::getName)
-                .anyMatch(fileName -> !getCurrentCommit().getTrackedFiles().containsKey(fileName))
+                .filter(fileName -> !getCurrentCommit().getTrackedFiles().containsKey(fileName))
+                .anyMatch(fileName -> targetCommit.getTrackedFiles().containsKey(fileName))
         ) {
             exitWithMessage("There is an untracked file in the way; delete it, or add and commit it first.");
         }
@@ -365,6 +366,10 @@ public class Repository {
             exitWithMessage("No commit with that id exists.");
         }
         checkoutCommit(targetCommit);
+
+        Branch currentBranch = getCurrentBranch();
+        currentBranch.setCommit(targetCommit);
+        branchStore.saveBranch(currentBranch);
     }
 
     /**
