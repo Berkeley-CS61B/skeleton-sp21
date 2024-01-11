@@ -9,7 +9,7 @@ import static gitlet.Utils.*;
 /** Represents a gitlet commit object.
  *  @author xUser5000
  */
-public class Commit implements Serializable, Dumpable {
+public class Commit implements Serializable, Dumpable, Comparable<Commit> {
     private final String message;
     private final Date timestamp;
     /** Original parent from the  */
@@ -26,6 +26,11 @@ public class Commit implements Serializable, Dumpable {
         this.secondaryParent = secondaryParent;
         this.trackedFiles = (trackedFiles != null) ? trackedFiles : new TreeMap<>();
         this.hash = generateHash();
+    }
+
+    @Override
+    public int compareTo(Commit other) {
+        return this.getHash().compareTo(other.getHash());
     }
 
     /* Builder class */

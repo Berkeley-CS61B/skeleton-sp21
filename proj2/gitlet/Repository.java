@@ -511,8 +511,8 @@ public class Repository {
     private static Commit splitPoint(Branch a, Branch b) {
         Commit A = commitStore.getCommitByHash(a.getCommitHash());
         Commit B = commitStore.getCommitByHash(b.getCommitHash());
-        Set<String> set = getCommitChain(A).stream().map(Commit::getHash).collect(Collectors.toSet());
-        return getCommitChain(B).stream()
+        Set<String> set = getCommitTree(A).stream().map(Commit::getHash).collect(Collectors.toSet());
+        return getCommitTree(B).stream()
                 .filter(commit -> set.contains(commit.getHash()))
                 .findFirst()
                 .orElse(null);
@@ -531,6 +531,28 @@ public class Repository {
             currentCommit = commitStore.getCommitByHash(currentCommit.getParent());
         }
         return commits;
+    }
+
+    private static List<Commit> getCommitTree(Commit rootCommit) {
+        List<Commit> result = new ArrayList<>();
+        DFS(rootCommit, new HashSet<>(), result);
+        return result;
+    }
+
+    private static void DFS(Commit node, Set<String> visited, List<Commit> list) {
+        list.add(node);
+        visited.add(node.getHash());
+
+        String primaryParent = node.getParent();
+        String secondaryParent = node.getSecondaryParent();
+
+        if (primaryParent != null && !visited.contains(primaryParent)) {
+            DFS(commitStore.getCommitByHash(primaryParent), visited, list);
+        }
+
+        if (secondaryParent != null && !visited.contains(secondaryParent)) {
+            DFS(commitStore.getCommitByHash(secondaryParent), visited, list);
+        }
     }
 
     private static Branch getCurrentBranch() {
