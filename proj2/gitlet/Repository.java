@@ -527,13 +527,16 @@ public class Repository {
         }
     }
 
+    /**
+     * finds the latest common ancestor of two branches in linear time relative to the size of the commit tree
+     */
     private static Commit splitPoint(Branch a, Branch b) {
         Commit A = commitStore.getCommitByHash(a.getCommitHash());
         Commit B = commitStore.getCommitByHash(b.getCommitHash());
         Set<String> set = getCommitTree(A).stream().map(Commit::getHash).collect(Collectors.toSet());
         return getCommitTree(B).stream()
                 .filter(commit -> set.contains(commit.getHash()))
-                .findFirst()
+                .max(Comparator.comparing(Commit::getTimestamp))
                 .orElse(null);
     }
 
