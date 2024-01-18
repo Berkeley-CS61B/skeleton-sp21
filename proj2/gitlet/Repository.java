@@ -15,24 +15,51 @@ import static gitlet.Utils.*;
 public class Repository {
 
     /** The current working directory. */
-    private static final File CWD = new File(System.getProperty("user.dir"));
+    private final File CWD;
     /** The .gitlet directory. */
-    private static final File GITLET_DIR = join(CWD, ".gitlet");
+    private final File GITLET_DIR;
 
-    private static final File COMMITS_DIR = join(GITLET_DIR, "commits");
-    private static final File BLOBS_DIR = join(GITLET_DIR, "blobs");
-    private static final File BRANCHES_DIR = join(GITLET_DIR, "branches");
-    private static final File HEAD_FILE = join(GITLET_DIR, "HEAD");
-    private static final File STAGED_DIR = join(GITLET_DIR, "staged");
-    private static final File ADDITION_DIR = join(STAGED_DIR, "addition");
-    private static final File REMOVAL_DIR = join(STAGED_DIR, "removal");
+    private final File COMMITS_DIR;
+    private final File BLOBS_DIR;
+    private final File BRANCHES_DIR;
+    private final File HEAD_FILE;
+    private final File STAGED_DIR;
+    private final File ADDITION_DIR;
+    private final File REMOVAL_DIR;
 
-    private static final WorkingArea workingArea = new WorkingArea(CWD);
-    private static final CommitStore commitStore = new CommitStore(COMMITS_DIR);
-    private static final BranchStore branchStore = new BranchStore(BRANCHES_DIR);
-    private static final StagingArea stagingArea = new StagingArea(ADDITION_DIR, REMOVAL_DIR);
-    private static final Head head = new Head(HEAD_FILE);
-    private static final BlobStore blobStore = new BlobStore(BLOBS_DIR);
+    private final WorkingArea workingArea;
+    private final CommitStore commitStore;
+    private final BranchStore branchStore;
+    private final StagingArea stagingArea;
+    private final Head head;
+    private final BlobStore blobStore;
+
+    public Repository(String currentWorkingDirectory) {
+        if (currentWorkingDirectory == null || currentWorkingDirectory.isBlank()) {
+            throw new RuntimeException("Working directory not found.");
+        }
+
+        CWD = new File(currentWorkingDirectory);
+        if (!CWD.exists()) {
+            throw new RuntimeException("Working directory not found.");
+        }
+
+        GITLET_DIR = join(CWD, ".gitlet");
+        COMMITS_DIR = join(GITLET_DIR, "commits");
+        BLOBS_DIR = join(GITLET_DIR, "blobs");
+        BRANCHES_DIR = join(GITLET_DIR, "branches");
+        HEAD_FILE = join(GITLET_DIR, "HEAD");
+        STAGED_DIR = join(GITLET_DIR, "staged");
+        ADDITION_DIR = join(STAGED_DIR, "addition");
+        REMOVAL_DIR = join(STAGED_DIR, "removal");
+
+        workingArea = new WorkingArea(CWD);
+        commitStore = new CommitStore(COMMITS_DIR);
+        branchStore = new BranchStore(BRANCHES_DIR);
+        stagingArea = new StagingArea(ADDITION_DIR, REMOVAL_DIR);
+        head = new Head(HEAD_FILE);
+        blobStore = new BlobStore(BLOBS_DIR);
+    }
 
     /**
      * Initialize the directory structure inside .gitlet
@@ -40,7 +67,7 @@ public class Repository {
      * Start with one commit with the message "initial commit" with a timestamp = Unix epoch
      * Set HEAD to point to the master branch
      */
-    public static void init() throws IOException {
+    public void init() throws IOException {
         if (GITLET_DIR.exists()) {
             exitWithMessage("A Gitlet version-control system already exists in the current directory.");
         }
@@ -71,7 +98,7 @@ public class Repository {
      * Stage the file for addition
      * If the file was staged for removal, it will no longer be after executing the command
      */
-    public static void add(String fileName) {
+    public void add(String fileName) {
         checkInitializedGitletDirectory();
         File workingFile = workingArea.getFile(fileName);
         if (workingFile == null) {
@@ -104,12 +131,12 @@ public class Repository {
      * Update the pointer of the current branch to point to the new commit
      * Clear the staging area
      */
-    public static void commit(String message) {
+    public void commit(String message) {
         checkInitializedGitletDirectory();
         commit(message, null);
     }
 
-    private static void commit(String message, String secondaryParent) {
+    private void commit(String message, String secondaryParent) {
         if (message.isEmpty()) {
             exitWithMessage("Please enter a commit message.");
         }
@@ -151,7 +178,7 @@ public class Repository {
      *      - stage it for removal
      *      - remove it from the working directory if the user has not already done so
      */
-    public static void rm(String filename) {
+    public void rm(String filename) {
         checkInitializedGitletDirectory();
         File stagedForAdditionFile = stagingArea.getFileForAddition(filename);
         Map<String, String> trackedFiles = getCurrentCommit().getTrackedFiles();
@@ -173,7 +200,7 @@ public class Repository {
      *      starting from the commit in the current HEAD until the initial commit
      * More info in Commit::log()
      */
-    public static void log() {
+    public void log() {
         checkInitializedGitletDirectory();
         getCommitChain(getCurrentCommit()).stream()
                 .map(Commit::log)
@@ -184,7 +211,7 @@ public class Repository {
      * Like log, except displays information about all commits ever made.
      * The order of the commits does not matter
      */
-    public static void globalLog() {
+    public void globalLog() {
         checkInitializedGitletDirectory();
         commitStore
                 .allCommitsStream()
@@ -196,7 +223,7 @@ public class Repository {
      * Prints out the ids of all commits that have the given commit message, one per line
      * If no such commit exists, print `Found no commit with that message.`
      */
-    public static void find(String commitMessage) {
+    public void find(String commitMessage) {
         checkInitializedGitletDirectory();
         List<Commit> matchedCommits = commitStore.getCommitsByMessage(commitMessage);
         if (matchedCommits.isEmpty()) {
@@ -219,7 +246,7 @@ public class Repository {
      * “Untracked Files” is for files present in the working directory but neither staged for addition nor tracked
      *      - This includes files that have been staged for removal, but then re-created without Gitlet’s knowledge
      */
-    public static void status() {
+    public void status() {
         checkInitializedGitletDirectory();
         System.out.println("=== Branches ===");
         List<Branch> branches = branchStore.allBranches();
@@ -258,7 +285,7 @@ public class Repository {
      * If the file does not exist in the previous commit, print `File does not exist in that commit.`
      * The new version of the file is not staged.
      */
-    public static void checkoutFile(String commitHash, String fileName) {
+    public void checkoutFile(String commitHash, String fileName) {
         checkInitializedGitletDirectory();
         Commit commit = commitStore.getCommitByHash(commitHash);
         if (commit == null) {
@@ -278,7 +305,7 @@ public class Repository {
     /**
      * same as checkoutFile(String commitHash, String fileName) except that commitHash is the current commit hash
      */
-    public static void checkoutFile(String fileName) {
+    public void checkoutFile(String fileName) {
         checkInitializedGitletDirectory();
         checkoutFile(getCurrentCommit().getHash(), fileName);
     }
@@ -289,7 +316,7 @@ public class Repository {
      *      print `There is an untracked file in the way; delete it, or add and commit it first.`
      * Clears the staging area
      */
-    private static void checkoutCommit(Commit targetCommit) {
+    private void checkoutCommit(Commit targetCommit) {
         if (workingArea.allFiles().stream()
                 .map(File::getName)
                 .filter(fileName -> !getCurrentCommit().getTrackedFiles().containsKey(fileName))
@@ -313,7 +340,7 @@ public class Repository {
      * The staging area is cleared, unless the checked-out branch is the current branch
      * Given branch will now be considered the current branch (HEAD)
      */
-    public static void checkoutBranch(String targetBranchName) {
+    public void checkoutBranch(String targetBranchName) {
         checkInitializedGitletDirectory();
         Branch currentBranch = getCurrentBranch();
         if (targetBranchName.equals(currentBranch.getName())) {
@@ -336,7 +363,7 @@ public class Repository {
      * This command does NOT immediately switch to the newly created branch (just as in real Git)
      * If a branch with the given name already exists, print the error message `A branch with that name already exists`
      */
-    public static void branch(String branchName) {
+    public void branch(String branchName) {
         checkInitializedGitletDirectory();
         if (branchStore.getBranch(branchName) != null) {
             exitWithMessage("A branch with that name already exists");
@@ -350,7 +377,7 @@ public class Repository {
      * If a branch with the given name does not exist, print `A branch with that name does not exist.`
      * If applied to the branch we are currently in, print `Cannot remove the current branch.`
      */
-    public static void rmBranch(String branchName) {
+    public void rmBranch(String branchName) {
         checkInitializedGitletDirectory();
         if (getCurrentBranch().getName().equals(branchName)) {
             exitWithMessage("Cannot remove the current branch.");
@@ -372,7 +399,7 @@ public class Repository {
      * Clear the staging area
      * Move the current branch’s head to that commit
      */
-    public static void reset(String commitHash) {
+    public void reset(String commitHash) {
         checkInitializedGitletDirectory();
         Commit targetCommit = commitStore.getCommitByHash(commitHash);
         if (targetCommit == null) {
@@ -424,7 +451,7 @@ public class Repository {
      *      - commit with the message: `Merged [given branch name] into [current branch name].`
      *      - if the merge encountered a conflict, print the message `Encountered a merge conflict.`
      */
-    public static void merge(String branchName) {
+    public void merge(String branchName) {
         checkInitializedGitletDirectory();
         if (!stagingArea.isEmpty()) {
             exitWithMessage("You have uncommitted changes.");
@@ -530,7 +557,7 @@ public class Repository {
     /**
      * finds the latest common ancestor of two branches in linear time relative to the size of the commit tree
      */
-    private static Commit splitPoint(Branch a, Branch b) {
+    private Commit splitPoint(Branch a, Branch b) {
         Commit A = commitStore.getCommitByHash(a.getCommitHash());
         Commit B = commitStore.getCommitByHash(b.getCommitHash());
         Set<String> set = getCommitTree(A).stream().map(Commit::getHash).collect(Collectors.toSet());
@@ -540,12 +567,12 @@ public class Repository {
                 .orElse(null);
     }
 
-    private static Commit getCurrentCommit() {
+    private Commit getCurrentCommit() {
         String commitHash = getCurrentBranch().getCommitHash();
         return commitStore.getCommitByHash(commitHash);
     }
 
-    private static List<Commit> getCommitChain(Commit startingCommit) {
+    private List<Commit> getCommitChain(Commit startingCommit) {
         List<Commit> commits = new ArrayList<>();
         Commit currentCommit = startingCommit;
         while (currentCommit != null) {
@@ -555,13 +582,13 @@ public class Repository {
         return commits;
     }
 
-    private static List<Commit> getCommitTree(Commit rootCommit) {
+    private List<Commit> getCommitTree(Commit rootCommit) {
         List<Commit> result = new ArrayList<>();
         DFS(rootCommit, new HashSet<>(), result);
         return result;
     }
 
-    private static void DFS(Commit node, Set<String> visited, List<Commit> list) {
+    private void DFS(Commit node, Set<String> visited, List<Commit> list) {
         list.add(node);
         visited.add(node.getHash());
 
@@ -577,15 +604,15 @@ public class Repository {
         }
     }
 
-    private static Branch getCurrentBranch() {
+    private Branch getCurrentBranch() {
         return branchStore.getBranch(head.get());
     }
 
-    private static void setCurrentBranch(Branch branch) {
+    private void setCurrentBranch(Branch branch) {
         head.set(branch);
     }
 
-    private static void checkInitializedGitletDirectory() {
+    private void checkInitializedGitletDirectory() {
         if (!GITLET_DIR.exists()) {
             exitWithMessage("Not in an initialized Gitlet directory.");
         }

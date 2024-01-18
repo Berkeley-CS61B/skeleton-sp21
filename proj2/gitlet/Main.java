@@ -15,6 +15,8 @@ public class Main {
             exitWithMessage("Please enter a command.");
         }
 
+        Repository repository = new Repository(System.getProperty("user.dir"));
+
         String command = args[0];
         String fileName;
         String message;
@@ -24,56 +26,56 @@ public class Main {
             switch (command) {
                 case "init":
                     validateNumArgs(args, 1);
-                    Repository.init();
+                    repository.init();
                     break;
                 case "add":
                     validateNumArgs(args, 2);
                     fileName = args[1];
-                    Repository.add(fileName);
+                    repository.add(fileName);
                     break;
                 case "commit":
                     validateNumArgs(args, 2);
                     message = args[1];
-                    Repository.commit(message);
+                    repository.commit(message);
                     break;
                 case "rm":
                     validateNumArgs(args, 2);
                     fileName = args[1];
-                    Repository.rm(fileName);
+                    repository.rm(fileName);
                     break;
                 case "log":
                     validateNumArgs(args, 1);
-                    Repository.log();
+                    repository.log();
                     break;
                 case "global-log":
                     validateNumArgs(args, 1);
-                    Repository.globalLog();
+                    repository.globalLog();
                     break;
                 case "find":
                     validateNumArgs(args, 2);
                     message = args[1];
-                    Repository.find(message);
+                    repository.find(message);
                     break;
                 case "status":
                     validateNumArgs(args, 1);
-                    Repository.status();
+                    repository.status();
                     break;
                 case "checkout":
                     switch (args.length) {
                         case 2:
                             branchName = args[1];
-                            Repository.checkoutBranch(branchName);
+                            repository.checkoutBranch(branchName);
                             break;
                         case 3:
                             if (!args[1].equals("--")) incorrectOperands();
                             fileName = args[2];
-                            Repository.checkoutFile(fileName);
+                            repository.checkoutFile(fileName);
                             break;
                         case 4:
                             if (!args[2].equals("--")) incorrectOperands();
                             commitHash = args[1];
                             fileName = args[3];
-                            Repository.checkoutFile(commitHash, fileName);
+                            repository.checkoutFile(commitHash, fileName);
                             break;
                         default:
                             incorrectOperands();
@@ -82,22 +84,22 @@ public class Main {
                 case "branch":
                     validateNumArgs(args, 2);
                     branchName = args[1];
-                    Repository.branch(branchName);
+                    repository.branch(branchName);
                     break;
                 case "rm-branch":
                     validateNumArgs(args, 2);
                     branchName = args[1];
-                    Repository.rmBranch(branchName);
+                    repository.rmBranch(branchName);
                     break;
                 case "reset":
                     validateNumArgs(args, 2);
                     commitHash = args[1];
-                    Repository.reset(commitHash);
+                    repository.reset(commitHash);
                     break;
                 case "merge":
                     validateNumArgs(args, 2);
                     branchName = args[1];
-                    Repository.merge(branchName);
+                    repository.merge(branchName);
                     break;
                 default:
                     exitWithMessage("No command with that name exists.");
