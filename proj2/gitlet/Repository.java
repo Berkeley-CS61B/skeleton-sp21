@@ -26,6 +26,7 @@ public class Repository {
     private final File STAGED_DIR;
     private final File ADDITION_DIR;
     private final File REMOVAL_DIR;
+    private final File REMOTE_DIR;
 
     private final WorkingArea workingArea;
     private final CommitStore commitStore;
@@ -33,6 +34,7 @@ public class Repository {
     private final StagingArea stagingArea;
     private final Head head;
     private final BlobStore blobStore;
+    private final RemoteStore remoteStore;
 
     public Repository(String currentWorkingDirectory) {
         if (currentWorkingDirectory == null || currentWorkingDirectory.isBlank()) {
@@ -52,6 +54,7 @@ public class Repository {
         STAGED_DIR = join(GITLET_DIR, "staged");
         ADDITION_DIR = join(STAGED_DIR, "addition");
         REMOVAL_DIR = join(STAGED_DIR, "removal");
+        REMOTE_DIR = join(GITLET_DIR, "remote");
 
         workingArea = new WorkingArea(CWD);
         commitStore = new CommitStore(COMMITS_DIR);
@@ -59,6 +62,7 @@ public class Repository {
         stagingArea = new StagingArea(ADDITION_DIR, REMOVAL_DIR);
         head = new Head(HEAD_FILE);
         blobStore = new BlobStore(BLOBS_DIR);
+        remoteStore = new RemoteStore(REMOTE_DIR);
     }
 
     /**
@@ -552,6 +556,22 @@ public class Repository {
         if (isConflict.get()) {
             System.out.println("Encountered a merge conflict.");
         }
+    }
+
+    /**
+     * Saves the given login information under the given remote name.
+     * If a remote with the given name already exists, print `A remote with that name already exists.`
+     */
+    public void addRemote(String name, String URI) throws IOException {
+        remoteStore.addRemote(name, URI);
+    }
+
+    /**
+     * Remove information associated with the given remote name.
+     * If a remote with the given name does not exist, print `A remote with that name does not exist.`
+     */
+    public void rmRemote(String name) {
+        remoteStore.removeRemote(name);
     }
 
     /**

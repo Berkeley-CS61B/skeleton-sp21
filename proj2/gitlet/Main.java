@@ -22,6 +22,8 @@ public class Main {
         String message;
         String commitHash;
         String branchName;
+        String remoteName;
+        String remoteURI;
         try {
             switch (command) {
                 case "init":
@@ -100,6 +102,17 @@ public class Main {
                     validateNumArgs(args, 2);
                     branchName = args[1];
                     repository.merge(branchName);
+                    break;
+                case "add-remote":
+                    validateNumArgs(args, 3);
+                    remoteName = args[1];
+                    remoteURI = args[2];
+                    repository.addRemote(remoteName, remoteURI);
+                    break;
+                case "rm-remote":
+                    validateNumArgs(args, 2);
+                    remoteName = args[1];
+                    repository.rmRemote(remoteName);
                     break;
                 default:
                     exitWithMessage("No command with that name exists.");
